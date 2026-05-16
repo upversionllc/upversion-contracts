@@ -1,25 +1,30 @@
-module.exports = async function(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   
-  var SAM_KEY = process.env.SAM_API_KEY;
-  var results = [];
-  var codes = ["541613", "611420", "541511", "424120"];
+  const key = process.env.SAM_API_KEY;
+  const codes = ["541613", "611420", "541511", "424120"];
+  const results = [];
   
-  var today = new Date();
-  var past = new Date();
-  past.setDate(past.getDate() - 90);
+  const now = new Date();
+  const past = new Date();
+  past.setDate(now.getDate() - 90);
   
-  function fmt(d) {
-    return (d.getMonth()+1).toString().padStart(2,"0") + "/" + d.getDate().toString().padStart(2,"0") + "/" + d.getFullYear();
-  }
+  const pad = n => String(n).padStart(2, "0");
+  const fmt = d => pad(d.getMonth()+1)+"/"+pad(d.getDate())+"/"+d.getFullYear();
   
-  for (var i = 0; i < codes.length; i++) {
+  for (const code of codes) {
     try {
-      var url = "https://api.sam.gov/opportunities/v2/search?api_key=" + SAM_KEY + "&naicsCode=" + codes[i] + "&limit=10&postedFrom=" + fmt(past) + "&postedTo=" + fmt(today) + "&active=true";
-      var r = await fetch(url);
-      var data = await r.json();
-      if (data.opportunitiesData) results = results.concat(data.opportunitiesData);
-    } catch(e) {}
+      const url = "https://api.sam.gov/prod/opportunities/v2/search"
+        + "?api_key=" + key
+        + "&naicsCode=" + code
+        + "&limit=10"
+        + "&postedFrom=" + fmt(past)
+        + "&postedTo=" + fmt(now)
+        + "&active=true";
+      const r = await fetch(url);
+      const data = await r.json();
+      if (data.opportunitiesData) results.push(...data.opportunitiesData);
+    } catch(e) { console.error(code, e.message); }
   }
   
   res.status(200).json({ opportunities: results, total: results.length });
