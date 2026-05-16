@@ -14,10 +14,8 @@ body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #dd
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: #060f1c; }
 ::-webkit-scrollbar-thumb { background: #1a3a58; border-radius: 3px; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
-@keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 </style>
 </head>
 <body>
@@ -27,43 +25,24 @@ body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #dd
 const ANTHROPIC_API_KEY = "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";
 
 const SAM_SEARCHES = [
-  {
-    id: "1", naics: "541613", icon: "📣",
-    label: "Marketing Consulting Services",
-    description: "Federal agencies seeking marketing strategy, outreach campaigns, stakeholder engagement, and communications consulting.",
-    samUrl: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=541613",
-    avgValue: "$200K–$800K", setAsides: "SBA, 8(a), MBE preferred",
-  },
-  {
-    id: "2", naics: "611420", icon: "💻",
-    label: "Computer Training Services",
-    description: "Government IT workforce training, cybersecurity awareness, and software skills development for federal employees.",
-    samUrl: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=611420",
-    avgValue: "$100K–$500K", setAsides: "Small Business Set-Aside",
-  },
-  {
-    id: "3", naics: "541511", icon: "⚙️",
-    label: "Custom Software Development",
-    description: "Custom application development, digital transformation, web portals, and software modernization for federal agencies.",
-    samUrl: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=541511",
-    avgValue: "$300K–$2M", setAsides: "WOSB, EDWOSB, SBA",
-  },
-  {
-    id: "4", naics: "424120", icon: "📦",
-    label: "Office Supplies Wholesale",
-    description: "Stationery, office supplies, and printed materials wholesale distribution to federal and state government offices.",
-    samUrl: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=424120",
-    avgValue: "$50K–$300K", setAsides: "MBE/SBE preferred",
-  },
+  { id:"1", naics:"541613", icon:"📣", label:"Marketing Consulting Services", description:"Federal agencies seeking marketing strategy, outreach campaigns, stakeholder engagement, and communications consulting.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=541613", avgValue:"$200K–$800K", setAsides:"SBA, 8(a), MBE preferred", tag:"Core" },
+  { id:"2", naics:"611420", icon:"💻", label:"Computer & IT Training", description:"Government IT workforce training, cybersecurity awareness, and software skills development for federal employees.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=611420", avgValue:"$100K–$500K", setAsides:"Small Business Set-Aside", tag:"Core" },
+  { id:"3", naics:"541511", icon:"⚙️", label:"Custom Software Development", description:"Custom application development, digital transformation, web portals, and software modernization for federal agencies.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=541511", avgValue:"$300K–$2M", setAsides:"WOSB, EDWOSB, SBA", tag:"Core" },
+  { id:"4", naics:"424120", icon:"📦", label:"Office Supplies Wholesale", description:"Stationery, office supplies, and printed materials wholesale distribution to federal and state government offices.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=424120", avgValue:"$50K–$300K", setAsides:"MBE/SBE preferred", tag:"Core" },
+  { id:"5", naics:"611430", icon:"🧬", label:"Biotech Manufacturing Training", description:"Professional workforce development for biotech, pharmaceutical manufacturing, lab operations, and life sciences. Perfect for NIH, FDA, DOD, and NJ state agencies.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=611430", avgValue:"$150K–$1M", setAsides:"SBA, MBE, 8(a)", tag:"Biotech" },
+  { id:"6", naics:"541714", icon:"🔬", label:"Biotechnology R&D Training", description:"R&D consulting and training in biotechnology for NIH, FDA, BARDA, and Department of Defense biotech programs.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=541714", avgValue:"$200K–$2M", setAsides:"SBIR, SBA, MBE", tag:"Biotech" },
+  { id:"7", naics:"611519", icon:"🏭", label:"Technical Training — Biotech/Pharma", description:"Specialized training for pharmaceutical and biotech manufacturing processes, GMP compliance, lab safety, and life sciences workforce development.", samUrl:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BnaicsCodes%5D=611519", avgValue:"$100K–$600K", setAsides:"Small Business, MBE", tag:"Biotech" },
 ];
 
 const QUICK_SEARCHES = [
-  { label: "NJ State Contracts", url: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BplaceOfPerformanceState%5D=NJ" },
-  { label: "Sources Sought", url: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5Btype%5D=s" },
-  { label: "Small Business Set-Aside", url: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BtypeOfSetAside%5D=SBA" },
-  { label: "8(a) Set-Aside", url: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BtypeOfSetAside%5D=8A" },
-  { label: "Marketing + NJ", url: "https://sam.gov/search/?index=opp&keywords=marketing+consulting&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BplaceOfPerformanceState%5D=NJ" },
-  { label: "All Active Opportunities", url: "https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true" },
+  { label:"NJ State Contracts", url:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BplaceOfPerformanceState%5D=NJ" },
+  { label:"Sources Sought", url:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5Btype%5D=s" },
+  { label:"Small Business Set-Aside", url:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BtypeOfSetAside%5D=SBA" },
+  { label:"8(a) Set-Aside", url:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BtypeOfSetAside%5D=8A" },
+  { label:"Biotech Training", url:"https://sam.gov/search/?index=opp&keywords=biotech+training&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true" },
+  { label:"Training + NJ", url:"https://sam.gov/search/?index=opp&keywords=training&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BplaceOfPerformanceState%5D=NJ" },
+  { label:"Marketing + NJ", url:"https://sam.gov/search/?index=opp&keywords=marketing+consulting&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BplaceOfPerformanceState%5D=NJ" },
+  { label:"All Active", url:"https://sam.gov/search/?index=opp&page=1&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true" },
 ];
 
 function ProposalModal({ naicsInfo, onClose }) {
@@ -74,109 +53,54 @@ function ProposalModal({ naicsInfo, onClose }) {
 
   async function generate() {
     setPhase("loading"); setText("");
-    const oppTitle = customTitle || naicsInfo.label;
-    const oppAgency = customAgency || "Federal Agency";
     const prompt = `You are a professional government contract proposal writer for UPVERSION LLC.
-
-COMPANY PROFILE:
-- Name: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
-- Owner/President: Mahezabin Tai
-- Address: 253 Deep Brook Ct, Piscataway, NJ 08854
-- Certifications: MBE, SBE, Asian-Pacific American Owned
-- Primary NAICS: 541613 – Marketing Consulting
-- Additional NAICS: 611420, 541511, 424120
-
-CONTRACT OPPORTUNITY:
-- Title: ${oppTitle}
-- Agency: ${oppAgency}
-- NAICS: ${naicsInfo.naics} – ${naicsInfo.label}
-- Set-Aside: ${naicsInfo.setAsides}
-- Estimated Value: ${naicsInfo.avgValue}
-
-Write a compelling government proposal with:
-1. EXECUTIVE SUMMARY
-2. COMPANY OVERVIEW & CERTIFICATIONS
-3. TECHNICAL APPROACH (tailored to this opportunity)
-4. PAST PERFORMANCE (3 relevant examples)
-5. KEY PERSONNEL (Mahezabin Tai, President)
-6. WHY UPVERSION LLC WINS THIS
-7. CALL TO ACTION
-
-Use formal government proposal tone. Be specific and compelling.`;
-
+COMPANY: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
+Owner: Mahezabin Tai, President — biotech manufacturing trainer for institutes and government colleges
+Address: 253 Deep Brook Ct, Piscataway, NJ (NJ = #1 pharma/biotech state)
+Certifications: MBE, SBE, Asian-Pacific American Owned
+NAICS: 541613, 611420, 611430, 541714, 611519, 541511, 424120
+OPPORTUNITY: ${customTitle || naicsInfo.label} | Agency: ${customAgency || "Federal Agency"} | NAICS: ${naicsInfo.naics} | Set-Aside: ${naicsInfo.setAsides} | Value: ${naicsInfo.avgValue}
+Write a compelling proposal: 1) EXECUTIVE SUMMARY 2) COMPANY OVERVIEW & CERTIFICATIONS 3) TECHNICAL APPROACH 4) PAST PERFORMANCE (3 examples) 5) KEY PERSONNEL (Mahezabin Tai) 6) WHY UPVERSION LLC WINS 7) CALL TO ACTION. Formal government tone, specific and compelling.`;
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "x-api-key":ANTHROPIC_API_KEY, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{ role:"user", content:prompt }] }),
       });
       const data = await res.json();
-      const full = data.content?.map(c => c.text || "").join("\n") || "Error generating proposal.";
+      const full = data.content?.map(c => c.text||"").join("\n") || "Error.";
       setPhase("streaming");
       let i = 0;
-      const iv = setInterval(() => {
-        i += 16; setText(full.slice(0, i));
-        if (i >= full.length) { setText(full); clearInterval(iv); setPhase("done"); }
-      }, 12);
-    } catch (e) {
-      setText("Error: " + e.message); setPhase("done");
-    }
+      const iv = setInterval(() => { i+=16; setText(full.slice(0,i)); if(i>=full.length){setText(full);clearInterval(iv);setPhase("done");} }, 12);
+    } catch(e) { setText("Error: "+e.message); setPhase("done"); }
   }
 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,5,15,0.95)", backdropFilter:"blur(10px)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"linear-gradient(160deg,#081828,#0a1e34)", border:"1px solid #1a4060", borderRadius:20, width:"100%", maxWidth:680, maxHeight:"90vh", display:"flex", flexDirection:"column" }}>
-        <div style={{ padding:"18px 22px 14px", borderBottom:"1px solid #142a3e", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div>
-            <div style={{ color:"#00e5a0", fontSize:10, fontWeight:700, letterSpacing:2 }}>AI PROPOSAL DRAFT</div>
-            <div style={{ color:"#ddeeff", fontSize:14, fontWeight:700, fontFamily:"'DM Serif Display',Georgia,serif", marginTop:2 }}>{naicsInfo.icon} {naicsInfo.label}</div>
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"#3a6a8a", fontSize:20, cursor:"pointer" }}>✕</button>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,5,15,0.95)",backdropFilter:"blur(10px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"linear-gradient(160deg,#081828,#0a1e34)",border:"1px solid #1a4060",borderRadius:20,width:"100%",maxWidth:680,maxHeight:"90vh",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"18px 22px 14px",borderBottom:"1px solid #142a3e",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><div style={{color:"#00e5a0",fontSize:10,fontWeight:700,letterSpacing:2}}>AI PROPOSAL DRAFT</div><div style={{color:"#ddeeff",fontSize:14,fontWeight:700,fontFamily:"'DM Serif Display',Georgia,serif",marginTop:2}}>{naicsInfo.icon} {naicsInfo.label}</div></div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:20,cursor:"pointer"}}>✕</button>
         </div>
-
-        {phase === "idle" && (
-          <div style={{ padding:"20px 22px" }}>
-            <div style={{ color:"#3a6a8a", fontSize:11, fontWeight:700, letterSpacing:1.5, marginBottom:12 }}>CUSTOMIZE (OPTIONAL)</div>
-            <input value={customTitle} onChange={e => setCustomTitle(e.target.value)}
-              placeholder={`Opportunity title (default: ${naicsInfo.label})`}
-              style={{ width:"100%", background:"#060f1c", border:"1px solid #132436", borderRadius:9, padding:"10px 14px", color:"#b8d4ec", fontSize:13, outline:"none", marginBottom:10 }} />
-            <input value={customAgency} onChange={e => setCustomAgency(e.target.value)}
-              placeholder="Agency name (e.g. Dept of Veterans Affairs)"
-              style={{ width:"100%", background:"#060f1c", border:"1px solid #132436", borderRadius:9, padding:"10px 14px", color:"#b8d4ec", fontSize:13, outline:"none", marginBottom:16 }} />
-            <button onClick={generate}
-              style={{ width:"100%", background:"linear-gradient(135deg,#00c887,#0088cc)", color:"#001a10", border:"none", borderRadius:11, padding:13, fontWeight:800, fontSize:15, cursor:"pointer" }}>
-              ✦ Generate Proposal with AI
-            </button>
+        {phase==="idle" && (
+          <div style={{padding:"20px 22px"}}>
+            <div style={{color:"#3a6a8a",fontSize:11,fontWeight:700,letterSpacing:1.5,marginBottom:12}}>CUSTOMIZE (OPTIONAL)</div>
+            <input value={customTitle} onChange={e=>setCustomTitle(e.target.value)} placeholder={`Opportunity title (default: ${naicsInfo.label})`} style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:10}} />
+            <input value={customAgency} onChange={e=>setCustomAgency(e.target.value)} placeholder="Agency (e.g. NIH, FDA, DOD, NJ State)" style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:16}} />
+            <button onClick={generate} style={{width:"100%",background:"linear-gradient(135deg,#00c887,#0088cc)",color:"#001a10",border:"none",borderRadius:11,padding:13,fontWeight:800,fontSize:15,cursor:"pointer"}}>✦ Generate Proposal with AI</button>
           </div>
         )}
-
-        {phase !== "idle" && (
-          <div style={{ flex:1, overflowY:"auto", padding:"18px 22px" }}>
-            {phase === "loading" && (
-              <div style={{ color:"#4fc3f7", fontSize:14, padding:"30px 0", display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◌</span>
-                Drafting your proposal…
-              </div>
-            )}
-            <pre style={{ color:"#b8d4ec", fontSize:13, lineHeight:1.8, whiteSpace:"pre-wrap", wordBreak:"break-word", fontFamily:"'IBM Plex Mono',monospace" }}>
-              {text}{phase === "streaming" && <span style={{ animation:"blink 0.7s infinite", color:"#00e5a0" }}>▌</span>}
-            </pre>
+        {phase!=="idle" && (
+          <div style={{flex:1,overflowY:"auto",padding:"18px 22px"}}>
+            {phase==="loading" && <div style={{color:"#4fc3f7",fontSize:14,padding:"30px 0",display:"flex",alignItems:"center",gap:10}}><span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>◌</span>Drafting your proposal…</div>}
+            <pre style={{color:"#b8d4ec",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'IBM Plex Mono',monospace"}}>{text}{phase==="streaming"&&<span style={{animation:"blink 0.7s infinite",color:"#00e5a0"}}>▌</span>}</pre>
           </div>
         )}
-
-        {phase === "done" && (
-          <div style={{ padding:"14px 22px", borderTop:"1px solid #142a3e", display:"flex", gap:10 }}>
-            <button onClick={() => navigator.clipboard.writeText(text)}
-              style={{ background:"#0a2030", color:"#4fc3f7", border:"1px solid #1a4060", borderRadius:10, padding:"9px 16px", fontWeight:600, fontSize:12, cursor:"pointer" }}>📋 Copy</button>
-            <button onClick={() => { setPhase("idle"); setText(""); }}
-              style={{ background:"#0a2030", color:"#6a8aa8", border:"1px solid #142a3e", borderRadius:10, padding:"9px 16px", fontWeight:600, fontSize:12, cursor:"pointer" }}>↺ Redo</button>
-            <button onClick={onClose}
-              style={{ marginLeft:"auto", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:10, padding:"9px 22px", fontWeight:800, fontSize:13, cursor:"pointer" }}>Done ✓</button>
+        {phase==="done" && (
+          <div style={{padding:"14px 22px",borderTop:"1px solid #142a3e",display:"flex",gap:10}}>
+            <button onClick={()=>navigator.clipboard.writeText(text)} style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>📋 Copy</button>
+            <button onClick={()=>{setPhase("idle");setText("");}} style={{background:"#0a2030",color:"#6a8aa8",border:"1px solid #142a3e",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>↺ Redo</button>
+            <button onClick={onClose} style={{marginLeft:"auto",background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:10,padding:"9px 22px",fontWeight:800,fontSize:13,cursor:"pointer"}}>Done ✓</button>
           </div>
         )}
       </div>
@@ -186,96 +110,86 @@ Use formal government proposal tone. Be specific and compelling.`;
 
 function App() {
   const [draftNaics, setDraftNaics] = React.useState(null);
+  const [activeTab, setActiveTab] = React.useState("all");
+  const filtered = activeTab==="all" ? SAM_SEARCHES : activeTab==="core" ? SAM_SEARCHES.filter(s=>s.tag==="Core") : SAM_SEARCHES.filter(s=>s.tag==="Biotech");
 
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)" }}>
-      <div style={{ background:"rgba(4,14,30,0.96)", backdropFilter:"blur(14px)", borderBottom:"1px solid #0e2034", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:100 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:8, background:"linear-gradient(135deg,#00c887,#0088cc)", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:13, color:"#001a10" }}>UV</div>
-          <div>
-            <div style={{ fontFamily:"'DM Serif Display',Georgia,serif", fontSize:17 }}>UPVERSION LLC</div>
-            <div style={{ fontSize:9, color:"#2a6a8a", letterSpacing:1.5, fontWeight:700 }}>SAM.GOV CONTRACT INTELLIGENCE</div>
-          </div>
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)"}}>
+      <div style={{background:"rgba(4,14,30,0.96)",backdropFilter:"blur(14px)",borderBottom:"1px solid #0e2034",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:34,height:34,borderRadius:8,background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"#001a10"}}>UV</div>
+          <div><div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:17}}>UPVERSION LLC</div><div style={{fontSize:9,color:"#2a6a8a",letterSpacing:1.5,fontWeight:700}}>SAM.GOV CONTRACT INTELLIGENCE</div></div>
         </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {["MBE","SBE","Asian-Pacific"].map(c => (
-            <span key={c} style={{ background:"#00c88712", border:"1px solid #00c88728", color:"#00e5a0", fontSize:9, padding:"2px 8px", borderRadius:12, fontWeight:700 }}>{c}</span>
-          ))}
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
+          {["MBE","SBE","NJ Biotech"].map(c=><span key={c} style={{background:"#00c88712",border:"1px solid #00c88728",color:"#00e5a0",fontSize:9,padding:"2px 8px",borderRadius:12,fontWeight:700}}>{c}</span>)}
         </div>
       </div>
 
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"24px 16px" }}>
+      <div style={{maxWidth:860,margin:"0 auto",padding:"24px 16px"}}>
 
-        <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0a1a28)", border:"1px solid #132436", borderRadius:16, padding:"18px 22px", marginBottom:22, animation:"slideUp 0.4s ease" }}>
-          <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:10 }}>REGISTERED ENTITY</div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:"8px 18px" }}>
-            {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Primary NAICS","541613 — Marketing"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v]) => (
-              <div key={k}>
-                <div style={{ color:"#2a5a78", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:2 }}>{k}</div>
-                <div style={{ color:"#9abcd4", fontSize:12 }}>{v}</div>
-              </div>
+        <div style={{background:"linear-gradient(135deg,#0c1c2e,#0a1a28)",border:"1px solid #132436",borderRadius:16,padding:"18px 22px",marginBottom:22}}>
+          <div style={{color:"#2a6a8a",fontSize:10,fontWeight:700,letterSpacing:2,marginBottom:10}}>REGISTERED ENTITY</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"8px 18px"}}>
+            {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Expertise","Biotech Manufacturing Trainer"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v])=>(
+              <div key={k}><div style={{color:"#2a5a78",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:2}}>{k}</div><div style={{color:"#9abcd4",fontSize:12}}>{v}</div></div>
             ))}
           </div>
         </div>
 
-        <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0c1e30)", border:"1px solid #132436", borderRadius:16, padding:"18px 22px", marginBottom:22 }}>
-          <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:6 }}>⚡ QUICK SEARCH ON SAM.GOV</div>
-          <div style={{ color:"#2a5a78", fontSize:12, marginBottom:14 }}>Tap any button to open live results directly on SAM.gov</div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {QUICK_SEARCHES.map((s,i) => (
-              <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
-                style={{ background:"#0a2030", color:"#4fc3f7", border:"1px solid #1a4060", borderRadius:20, padding:"7px 14px", fontSize:12, fontWeight:600, textDecoration:"none" }}>
-                {s.label} ↗
-              </a>
-            ))}
+        <div style={{background:"linear-gradient(135deg,#0a1e10,#0d2a14)",border:"1px solid #00c88730",borderRadius:14,padding:"14px 20px",marginBottom:22,display:"flex",gap:14,alignItems:"center"}}>
+          <span style={{fontSize:28}}>🧬</span>
+          <div><div style={{color:"#00e5a0",fontSize:12,fontWeight:700,marginBottom:3}}>NJ BIOTECH ADVANTAGE</div><div style={{color:"#2a6a44",fontSize:12,lineHeight:1.5}}>New Jersey is the #1 pharma/biotech state. As a Piscataway-based MBE trainer with biotech manufacturing expertise, UPVERSION LLC is perfectly positioned for NIH, FDA, DOD, and NJ state biotech training contracts.</div></div>
+        </div>
+
+        <div style={{background:"linear-gradient(135deg,#0c1c2e,#0c1e30)",border:"1px solid #132436",borderRadius:16,padding:"18px 22px",marginBottom:22}}>
+          <div style={{color:"#2a6a8a",fontSize:10,fontWeight:700,letterSpacing:2,marginBottom:6}}>⚡ QUICK SEARCH ON SAM.GOV</div>
+          <div style={{color:"#2a5a78",fontSize:12,marginBottom:14}}>Tap any button to open live results directly on SAM.gov</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {QUICK_SEARCHES.map((s,i)=><a key={i} href={s.url} target="_blank" rel="noopener noreferrer" style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:20,padding:"7px 14px",fontSize:12,fontWeight:600,textDecoration:"none"}}>{s.label} ↗</a>)}
           </div>
         </div>
 
-        <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:14 }}>YOUR NAICS CATEGORIES — BROWSE & DRAFT PROPOSALS</div>
+        <div style={{display:"flex",gap:8,marginBottom:18}}>
+          {[["all","All (7 Categories)"],["core","Core NAICS"],["biotech","🧬 Biotech Training"]].map(([val,label])=>(
+            <button key={val} onClick={()=>setActiveTab(val)} style={{background:activeTab===val?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28",color:activeTab===val?"#001a10":"#4a8aaa",border:activeTab===val?"none":"1px solid #132436",borderRadius:20,padding:"7px 16px",fontWeight:700,fontSize:12,cursor:"pointer"}}>{label}</button>
+          ))}
+        </div>
 
-        {SAM_SEARCHES.map(opp => (
-          <div key={opp.id} style={{ background:"linear-gradient(135deg,#0d1f30,#0f2438)", border:"1px solid #00e5a022", borderRadius:14, marginBottom:16, overflow:"hidden", boxShadow:"0 2px 20px #00e5a010" }}>
-            <div style={{ padding:"20px 22px" }}>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:10 }}>
-                <span style={{ background:"#0a2d44", color:"#4fc3f7", fontSize:10, padding:"2px 10px", borderRadius:10, fontWeight:700 }}>NAICS {opp.naics}</span>
-                <span style={{ background:"#152a18", color:"#66bb6a", fontSize:10, padding:"2px 10px", borderRadius:10, fontWeight:700 }}>{opp.avgValue}</span>
-                <span style={{ background:"#1a1a2e", color:"#9e9eb4", fontSize:10, padding:"2px 10px", borderRadius:10, fontWeight:600 }}>{opp.setAsides}</span>
+        {filtered.map(opp=>(
+          <div key={opp.id} style={{background:opp.tag==="Biotech"?"linear-gradient(135deg,#0d2218,#0f2a1a)":"linear-gradient(135deg,#0d1f30,#0f2438)",border:`1px solid ${opp.tag==="Biotech"?"#00c88722":"#00e5a022"}`,borderRadius:14,marginBottom:16,overflow:"hidden"}}>
+            <div style={{padding:"20px 22px"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+                <span style={{background:"#0a2d44",color:"#4fc3f7",fontSize:10,padding:"2px 10px",borderRadius:10,fontWeight:700}}>NAICS {opp.naics}</span>
+                <span style={{background:"#152a18",color:"#66bb6a",fontSize:10,padding:"2px 10px",borderRadius:10,fontWeight:700}}>{opp.avgValue}</span>
+                <span style={{background:"#1a1a2e",color:"#9e9eb4",fontSize:10,padding:"2px 10px",borderRadius:10,fontWeight:600}}>{opp.setAsides}</span>
+                {opp.tag==="Biotech"&&<span style={{background:"#0a2a18",color:"#00c887",fontSize:10,padding:"2px 10px",borderRadius:10,fontWeight:700,border:"1px solid #00c88730"}}>🧬 NEW</span>}
               </div>
-              <div style={{ color:"#ddeeff", fontSize:16, fontWeight:700, lineHeight:1.3, marginBottom:8, fontFamily:"'DM Serif Display',Georgia,serif" }}>{opp.icon} {opp.label}</div>
-              <div style={{ color:"#5a8aaa", fontSize:13, lineHeight:1.6, marginBottom:16 }}>{opp.description}</div>
-              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                <a href={opp.samUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ background:"linear-gradient(135deg,#0a4a8a,#0066aa)", color:"#b8d4ec", borderRadius:10, padding:"10px 18px", fontWeight:700, fontSize:13, textDecoration:"none" }}>
-                  🔍 Browse Live on SAM.gov ↗
-                </a>
-                <button onClick={() => setDraftNaics(opp)}
-                  style={{ background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:10, padding:"10px 18px", fontWeight:800, fontSize:13, cursor:"pointer" }}>
-                  ✦ Draft Proposal with AI
-                </button>
+              <div style={{color:"#ddeeff",fontSize:16,fontWeight:700,lineHeight:1.3,marginBottom:8,fontFamily:"'DM Serif Display',Georgia,serif"}}>{opp.icon} {opp.label}</div>
+              <div style={{color:"#5a8aaa",fontSize:13,lineHeight:1.6,marginBottom:16}}>{opp.description}</div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <a href={opp.samUrl} target="_blank" rel="noopener noreferrer" style={{background:"linear-gradient(135deg,#0a4a8a,#0066aa)",color:"#b8d4ec",borderRadius:10,padding:"10px 18px",fontWeight:700,fontSize:13,textDecoration:"none"}}>🔍 Browse Live on SAM.gov ↗</a>
+                <button onClick={()=>setDraftNaics(opp)} style={{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:10,padding:"10px 18px",fontWeight:800,fontSize:13,cursor:"pointer"}}>✦ Draft Proposal with AI</button>
               </div>
             </div>
           </div>
         ))}
 
-        <div style={{ background:"linear-gradient(135deg,#0a1e10,#081a0e)", border:"1px solid #0a3a1a", borderRadius:16, padding:"20px 22px", marginTop:8 }}>
-          <div style={{ color:"#00c887", fontSize:11, fontWeight:700, letterSpacing:2, marginBottom:12 }}>📋 HOW TO WIN CONTRACTS</div>
-          {[["1","Browse Live","Tap 'Browse Live on SAM.gov' to see real active contracts"],["2","Find a Match","Look for MBE, SBE, 8(a), or Small Business set-asides"],["3","Draft Proposal","Come back, tap 'Draft Proposal with AI', enter the contract title"],["4","Submit","Copy the proposal, customize with solicitation details, and submit"]].map(([n,t,d]) => (
-            <div key={n} style={{ display:"flex", gap:14, marginBottom:14, alignItems:"flex-start" }}>
-              <div style={{ width:28, height:28, borderRadius:"50%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:13, flexShrink:0 }}>{n}</div>
-              <div>
-                <div style={{ color:"#00e5a0", fontSize:13, fontWeight:700, marginBottom:2 }}>{t}</div>
-                <div style={{ color:"#2a6a44", fontSize:12, lineHeight:1.5 }}>{d}</div>
-              </div>
+        <div style={{background:"linear-gradient(135deg,#0a1e10,#081a0e)",border:"1px solid #0a3a1a",borderRadius:16,padding:"20px 22px",marginTop:8}}>
+          <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:12}}>📋 HOW TO WIN CONTRACTS</div>
+          {[["1","Browse Live","Tap 'Browse Live on SAM.gov' to see real active contracts"],["2","Find a Match","Look for MBE, SBE, 8(a), or Small Business set-asides"],["3","Draft Proposal","Come back, tap 'Draft Proposal with AI', enter contract title & agency"],["4","Submit","Copy the proposal, customize with solicitation details, and submit"]].map(([n,t,d])=>(
+            <div key={n} style={{display:"flex",gap:14,marginBottom:14,alignItems:"flex-start"}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,flexShrink:0}}>{n}</div>
+              <div><div style={{color:"#00e5a0",fontSize:13,fontWeight:700,marginBottom:2}}>{t}</div><div style={{color:"#2a6a44",fontSize:12,lineHeight:1.5}}>{d}</div></div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ textAlign:"center", padding:"20px", color:"#0e2a40", fontSize:11, borderTop:"1px solid #0a1e30", marginTop:20 }}>
-        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by Claude AI + SAM.gov
+      <div style={{textAlign:"center",padding:"20px",color:"#0e2a40",fontSize:11,borderTop:"1px solid #0a1e30",marginTop:20}}>
+        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Biotech Manufacturing Training · Powered by Claude AI + SAM.gov
       </div>
 
-      {draftNaics && <ProposalModal naicsInfo={draftNaics} onClose={() => setDraftNaics(null)} />}
+      {draftNaics && <ProposalModal naicsInfo={draftNaics} onClose={()=>setDraftNaics(null)} />}
     </div>
   );
 }
