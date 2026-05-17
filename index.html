@@ -21,11 +21,11 @@ body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #dd
 <body>
 <div id="root"></div>
 <script type="text/babel">
-
-const ANTHROPIC_API_KEY = "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";
-
+ 
+// API key is now securely stored on Vercel server
+ 
 const BASE = "https://sam.gov/search/?index=opp&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL";
-
+ 
 function makeUrl(sector, code, keyword) {
   let url = BASE;
   if (keyword) url += "&sfm%5BsimpleSearch%5D%5BkeywordTags%5D%5B0%5D=" + encodeURIComponent(keyword);
@@ -33,13 +33,13 @@ function makeUrl(sector, code, keyword) {
   url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
   return url;
 }
-
+ 
 function extractNoticeId(url) {
   if (!url) return "";
   const m = url.match(/opp\/([a-zA-Z0-9]+)\//);
   return m ? m[1] : "";
 }
-
+ 
 const CATEGORIES = [
   {
     id: "biotech", icon: "🧬", label: "Bio Pharma",
@@ -77,7 +77,7 @@ const CATEGORIES = [
     ],
   },
 ];
-
+ 
 const TABS = [
   { id:"all", label:"All" },
   { id:"biotech", label:"🧬 Bio Pharma" },
@@ -85,7 +85,7 @@ const TABS = [
   { id:"marketing", label:"📣 Marketing" },
   { id:"management", label:"🎓 Management" },
 ];
-
+ 
 function ProposalModal({ row, cat, onClose }) {
   const [text, setText] = React.useState("");
   const [phase, setPhase] = React.useState("idle");
@@ -93,22 +93,22 @@ function ProposalModal({ row, cat, onClose }) {
   const [samUrl, setSamUrl] = React.useState("");
   const [title, setTitle] = React.useState("");
   const [agency, setAgency] = React.useState("");
-
+ 
   const detectedId = extractNoticeId(samUrl);
   const resolvedId = noticeId || detectedId;
-
+ 
   async function generate() {
     setPhase("loading");
     setText("");
     const prompt = `You are a professional government contract proposal writer for UPVERSION LLC.
-
+ 
 COMPANY PROFILE:
 - Name: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
 - Owner/President: Mahezabin Tai — biotech manufacturing trainer, institute and government college instructor
 - Address: 253 Deep Brook Ct, Piscataway, NJ (NJ = #1 pharma/biotech state)
 - Certifications: MBE, SBE, Asian-Pacific American Owned
 - NAICS: 541613, 541611, 611420, 611430, 541714, 541715, 611519
-
+ 
 CONTRACT OPPORTUNITY:
 - Category: ${cat.label}
 - NAICS: ${row.naics} — ${row.label}
@@ -116,7 +116,7 @@ CONTRACT OPPORTUNITY:
 - SAM.gov URL: ${samUrl || "N/A"}
 - Title: ${title || "See solicitation"}
 - Agency: ${agency || "Federal Agency"}
-
+ 
 Write a compelling government proposal:
 1. EXECUTIVE SUMMARY (2-3 strong sentences)
 2. COMPANY OVERVIEW & CERTIFICATIONS (highlight MBE/SBE Small Business advantage)
@@ -125,23 +125,14 @@ Write a compelling government proposal:
 5. KEY PERSONNEL (Mahezabin Tai, President)
 6. WHY UPVERSION LLC WINS THIS CONTRACT
 7. CALL TO ACTION
-
+ 
 Use formal government proposal tone. Reference the Notice ID and agency where appropriate. Be specific and compelling.`;
-
+ 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }]
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
       const full = data.content?.map(c => c.text || "").join("\n") || "Error generating proposal.";
@@ -157,7 +148,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
       setPhase("done");
     }
   }
-
+ 
   const inputStyle = {
     width: "100%",
     background: "#060f1c",
@@ -170,11 +161,11 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
     marginBottom: 10,
     fontFamily: "'IBM Plex Mono', monospace",
   };
-
+ 
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,5,15,0.95)", backdropFilter:"blur(10px)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
       <div onClick={e => e.stopPropagation()} style={{ background:"linear-gradient(160deg,#081828,#0a1e34)", border:"1px solid #1a4060", borderRadius:20, width:"100%", maxWidth:680, maxHeight:"92vh", display:"flex", flexDirection:"column" }}>
-
+ 
         {/* Modal Header */}
         <div style={{ padding:"16px 20px 12px", borderBottom:"1px solid #142a3e", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
@@ -184,11 +175,11 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:"#3a6a8a", fontSize:20, cursor:"pointer" }}>✕</button>
         </div>
-
+ 
         {/* Idle — Input Form */}
         {phase === "idle" && (
           <div style={{ padding:"18px 20px", overflowY:"auto" }}>
-
+ 
             {/* Option 1 — Notice ID */}
             <div style={{ background:"#060f1c", border:"1px solid #132436", borderRadius:12, padding:"14px", marginBottom:12 }}>
               <div style={{ color:"#00e5a0", fontSize:11, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
@@ -202,14 +193,14 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
               />
               {noticeId && <div style={{ color:"#00c887", fontSize:10, marginTop:5 }}>✓ Notice ID entered</div>}
             </div>
-
+ 
             {/* OR divider */}
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
               <div style={{ flex:1, height:1, background:"#132436" }} />
               <div style={{ color:"#3a6a8a", fontSize:12, fontWeight:700 }}>OR</div>
               <div style={{ flex:1, height:1, background:"#132436" }} />
             </div>
-
+ 
             {/* Option 2 — SAM.gov URL */}
             <div style={{ background:"#060f1c", border:"1px solid #132436", borderRadius:12, padding:"14px", marginBottom:16 }}>
               <div style={{ color:"#4fc3f7", fontSize:11, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
@@ -228,10 +219,10 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
                 <div style={{ color:"#f0c040", fontSize:10, marginTop:5 }}>⚠ Could not detect Notice ID — try pasting Notice ID directly</div>
               )}
             </div>
-
+ 
             {/* Divider */}
             <div style={{ borderTop:"1px solid #132436", marginBottom:14 }} />
-
+ 
             {/* Optional fields */}
             <div style={{ color:"#3a6a8a", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
               ADDITIONAL DETAILS (OPTIONAL — improves proposal quality)
@@ -248,7 +239,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
               placeholder="Agency name (e.g. Dept of Army, NIH, VA)"
               style={{ ...inputStyle, marginBottom:16 }}
             />
-
+ 
             {/* Summary of what will be used */}
             {(resolvedId || title || agency) && (
               <div style={{ background:"#0a2a18", border:"1px solid #00c88730", borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
@@ -258,7 +249,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
                 {agency && <div style={{ color:"#6abf8a", fontSize:11 }}>• Agency: {agency}</div>}
               </div>
             )}
-
+ 
             <button
               onClick={generate}
               disabled={!resolvedId && !title && !agency}
@@ -278,7 +269,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
             )}
           </div>
         )}
-
+ 
         {/* Streaming / Done */}
         {phase !== "idle" && (
           <div style={{ flex:1, overflowY:"auto", padding:"16px 20px" }}>
@@ -293,7 +284,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
             </pre>
           </div>
         )}
-
+ 
         {phase === "done" && (
           <div style={{ padding:"12px 20px", borderTop:"1px solid #142a3e", display:"flex", gap:10 }}>
             <button onClick={() => navigator.clipboard.writeText(text)} style={{ background:"#0a2030", color:"#4fc3f7", border:"1px solid #1a4060", borderRadius:10, padding:"9px 16px", fontWeight:600, fontSize:12, cursor:"pointer" }}>📋 Copy</button>
@@ -305,7 +296,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
     </div>
   );
 }
-
+ 
 function CategoryCard({ cat, onDraft }) {
   const c = cat.accentColor;
   return (
@@ -322,9 +313,9 @@ function CategoryCard({ cat, onDraft }) {
             <span style={{ background:"#0a2030", border:"1px solid #1a4060", color:"#4fc3f7", fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>USA ONLY</span>
           </div>
         </div>
-
+ 
         <div style={{ borderTop:`1px solid ${c}20`, marginBottom:12 }} />
-
+ 
         {cat.naicsRows.map((row, i) => (
           <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom: i < cat.naicsRows.length-1 ? 10 : 0, background:"#060f1c", borderRadius:12, padding:"12px 14px" }}>
             <div style={{ flex:1, minWidth:0 }}>
@@ -341,7 +332,7 @@ function CategoryCard({ cat, onDraft }) {
             </button>
           </div>
         ))}
-
+ 
         <div style={{ marginTop:12, color:"#2a5a78", fontSize:10 }}>
           💡 After Best Match opens, add filters on SAM.gov: Set Aside → Small Business · Place of Performance → NJ
         </div>
@@ -349,15 +340,15 @@ function CategoryCard({ cat, onDraft }) {
     </div>
   );
 }
-
+ 
 function App() {
   const [draftInfo, setDraftInfo] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
   const filtered = activeTab === "all" ? CATEGORIES : CATEGORIES.filter(c => c.id === activeTab);
-
+ 
   return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)" }}>
-
+ 
       {/* Header */}
       <div style={{ background:"rgba(4,14,30,0.96)", backdropFilter:"blur(14px)", borderBottom:"1px solid #0e2034", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -371,9 +362,9 @@ function App() {
           {["MBE","SBE","NJ"].map(c => <span key={c} style={{ background:"#00c88712", border:"1px solid #00c88728", color:"#00e5a0", fontSize:9, padding:"2px 8px", borderRadius:12, fontWeight:700 }}>{c}</span>)}
         </div>
       </div>
-
+ 
       <div style={{ maxWidth:860, margin:"0 auto", padding:"20px 16px" }}>
-
+ 
         {/* Company Card */}
         <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0a1a28)", border:"1px solid #132436", borderRadius:16, padding:"16px 20px", marginBottom:18 }}>
           <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:10 }}>REGISTERED ENTITY</div>
@@ -386,7 +377,7 @@ function App() {
             ))}
           </div>
         </div>
-
+ 
         {/* Tabs */}
         <div style={{ display:"flex", gap:8, marginBottom:18, flexWrap:"wrap" }}>
           {TABS.map(t => (
@@ -396,9 +387,9 @@ function App() {
             </button>
           ))}
         </div>
-
+ 
         {filtered.map(cat => <CategoryCard key={cat.id} cat={cat} onDraft={(row, c) => setDraftInfo({ row, cat:c })} />)}
-
+ 
         {/* How to use */}
         <div style={{ background:"linear-gradient(135deg,#0a1e10,#081a0e)", border:"1px solid #0a3a1a", borderRadius:16, padding:"18px 20px", marginTop:8 }}>
           <div style={{ color:"#00c887", fontSize:11, fontWeight:700, letterSpacing:2, marginBottom:12 }}>📋 HOW TO USE</div>
@@ -417,16 +408,16 @@ function App() {
           ))}
         </div>
       </div>
-
+ 
       <div style={{ textAlign:"center", padding:"20px", color:"#0e2a40", fontSize:11, borderTop:"1px solid #0a1e30", marginTop:20 }}>
         UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by Claude AI + SAM.gov
       </div>
-
+ 
       {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} onClose={() => setDraftInfo(null)} />}
     </div>
   );
 }
-
+ 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
