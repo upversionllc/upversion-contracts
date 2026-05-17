@@ -35,8 +35,8 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  // SAM.gov Awards - both Active AND Inactive checked = all past winners
-  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + USA;
+  // SAM.gov Awards - Inactive only, NO USA filter (USA blocks award results)
+  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
 }
 
 function extractNoticeId(url) {
