@@ -38,14 +38,14 @@ const CATEGORIES = [
   {
     id: "biotech",
     icon: "🧬",
-    label: "Bio Pharma Training",
-    naicsLabel: "NAICS 611519 · 611430 · 541714",
-    description: "Biotech & pharmaceutical manufacturing training — NIH, FDA, DOD, NJ state agencies.",
+    label: "Bio Pharma",
+    naicsLabel: "NAICS 611519 · 541714 · 541715",
+    description: "Biotech & pharmaceutical R&D and technical training — NIH, FDA, DOD, NJ state agencies.",
     accentColor: "#00c887",
     allUrls: [
-      { label: "611519 — Pharma Technical Training", url: makeUrl("61","611519") },
-      { label: "611430 — Biotech Training", url: makeUrl("61","611430") },
-      { label: "541714 — Biotechnology R&D", url: makeUrl("54","541714") },
+      { label: "611519 — Other Technical and Trade Schools", url: makeUrl("61","611519") },
+      { label: "541714 — R&D in Biotechnology", url: makeUrl("54","541714") },
+      { label: "541715 — R&D in Physical, Engineering & Life Sciences", url: makeUrl("54","541715") },
     ],
     bestUrl: makeUrl("61","611519","pharmaceutical"),
     bestLabel: "pharmaceutical + NAICS 611519",
@@ -53,9 +53,9 @@ const CATEGORIES = [
   {
     id: "it",
     icon: "💻",
-    label: "IT / Computer Training",
+    label: "IT Training",
     naicsLabel: "NAICS 611420",
-    description: "IT workforce training, computer skills, and technical training for federal agencies.",
+    description: "Computer training, IT workforce development, and technical skills training for federal agencies.",
     accentColor: "#4fc3f7",
     allUrls: [
       { label: "611420 — Computer Training", url: makeUrl("61","611420") },
@@ -66,16 +66,38 @@ const CATEGORIES = [
   {
     id: "marketing",
     icon: "📣",
-    label: "Marketing Consulting",
+    label: "Marketing",
     naicsLabel: "NAICS 541613",
-    description: "Marketing strategy, outreach, and communications consulting for federal agencies.",
+    description: "Marketing consulting, outreach campaigns, and communications strategy for federal agencies.",
     accentColor: "#f0c040",
     allUrls: [
-      { label: "541613 — Marketing Consulting", url: makeUrl("54","541613") },
+      { label: "541613 — Marketing Consulting Services", url: makeUrl("54","541613") },
     ],
     bestUrl: makeUrl("54","541613","marketing services"),
     bestLabel: "marketing services + NAICS 541613",
   },
+  {
+    id: "management",
+    icon: "🎓",
+    label: "Management Training",
+    naicsLabel: "NAICS 611430 · 541611",
+    description: "Professional development, management training, and administrative consulting for federal agencies.",
+    accentColor: "#c084fc",
+    allUrls: [
+      { label: "611430 — Professional and Management Development Training", url: makeUrl("61","611430") },
+      { label: "541611 — Administrative Management and General Management Consulting Services", url: makeUrl("54","541611") },
+    ],
+    bestUrl: makeUrl("61","611430","management training"),
+    bestLabel: "management training + NAICS 611430",
+  },
+];
+
+const TABS = [
+  { id: "all", label: "All" },
+  { id: "biotech", label: "🧬 Bio Pharma" },
+  { id: "it", label: "💻 IT Training" },
+  { id: "marketing", label: "📣 Marketing" },
+  { id: "management", label: "🎓 Management" },
 ];
 
 function ProposalModal({ cat, onClose }) {
@@ -89,9 +111,9 @@ function ProposalModal({ cat, onClose }) {
     const prompt = `You are a professional government contract proposal writer for UPVERSION LLC.
 COMPANY: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
 Owner: Mahezabin Tai, President — biotech manufacturing trainer, institute and government college instructor
-Address: 253 Deep Brook Ct, Piscataway, NJ
+Address: 253 Deep Brook Ct, Piscataway, NJ (NJ = #1 pharma/biotech state)
 Certifications: MBE, SBE, Asian-Pacific American Owned
-NAICS: 541613, 611420, 611430, 541714, 611519
+NAICS: 541613, 541611, 611420, 611430, 541714, 541715, 611519
 OPPORTUNITY:
 - Title: ${title || cat.label}
 - Agency: ${agency || "Federal Agency"}
@@ -99,7 +121,7 @@ OPPORTUNITY:
 Write a compelling government proposal:
 1. EXECUTIVE SUMMARY
 2. COMPANY OVERVIEW & CERTIFICATIONS (highlight MBE/SBE Small Business)
-3. TECHNICAL APPROACH
+3. TECHNICAL APPROACH (tailored to this opportunity)
 4. PAST PERFORMANCE (3 relevant examples)
 5. KEY PERSONNEL (Mahezabin Tai, President)
 6. WHY UPVERSION LLC WINS
@@ -126,6 +148,7 @@ Formal government tone. Specific and compelling.`;
           <div>
             <div style={{ color:"#00e5a0", fontSize:10, fontWeight:700, letterSpacing:2 }}>AI PROPOSAL DRAFT</div>
             <div style={{ color:"#ddeeff", fontSize:14, fontWeight:700, fontFamily:"'DM Serif Display',Georgia,serif", marginTop:2 }}>{cat.icon} {cat.label}</div>
+            <div style={{ color:"#3a6a8a", fontSize:11, marginTop:2 }}>{cat.naicsLabel}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:"#3a6a8a", fontSize:20, cursor:"pointer" }}>✕</button>
         </div>
@@ -189,8 +212,6 @@ function CategoryCard({ cat, onDraft }) {
         <div style={{ borderTop:`1px solid ${c}18`, marginBottom:14 }} />
 
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-
-          {/* ALL button */}
           <div style={{ flex:1, minWidth:120 }}>
             <button onClick={() => setShowAll(!showAll)}
               style={{ width:"100%", background:showAll ? c : "#0a2030", color:showAll ? "#001a10" : c, border:`1px solid ${c}50`, borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, cursor:"pointer", transition:"all 0.2s" }}>
@@ -200,18 +221,15 @@ function CategoryCard({ cat, onDraft }) {
               <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:6 }}>
                 {cat.allUrls.map((u, i) => (
                   <a key={i} href={u.url} target="_blank" rel="noopener noreferrer"
-                    style={{ background:"#060f1c", color:c, border:`1px solid ${c}30`, borderRadius:10, padding:"9px 14px", fontSize:12, fontWeight:600, textDecoration:"none", display:"block" }}>
+                    style={{ background:"#060f1c", color:c, border:`1px solid ${c}30`, borderRadius:10, padding:"9px 14px", fontSize:11, fontWeight:600, textDecoration:"none", display:"block" }}>
                     {u.label} ↗
                   </a>
                 ))}
-                <div style={{ color:"#2a5a78", fontSize:10, padding:"4px 2px" }}>
-                  💡 On SAM.gov you can add Set-Aside filter manually
-                </div>
+                <div style={{ color:"#2a5a78", fontSize:10, padding:"2px" }}>💡 Add Set-Aside / State filters on SAM.gov</div>
               </div>
             )}
           </div>
 
-          {/* BEST MATCH button */}
           <div style={{ flex:1, minWidth:120 }}>
             <a href={cat.bestUrl} target="_blank" rel="noopener noreferrer"
               style={{ display:"block", background:`linear-gradient(135deg,${c},${c}99)`, color:"#001a10", borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, textDecoration:"none", textAlign:"center" }}>
@@ -220,7 +238,6 @@ function CategoryCard({ cat, onDraft }) {
             <div style={{ color:"#2a5a78", fontSize:10, marginTop:5, textAlign:"center" }}>{cat.bestLabel}</div>
           </div>
 
-          {/* DRAFT button */}
           <div style={{ flex:1, minWidth:120 }}>
             <button onClick={() => onDraft(cat)}
               style={{ width:"100%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, cursor:"pointer" }}>
@@ -228,7 +245,6 @@ function CategoryCard({ cat, onDraft }) {
             </button>
             <div style={{ color:"#2a5a78", fontSize:10, marginTop:5, textAlign:"center" }}>AI writes your proposal</div>
           </div>
-
         </div>
       </div>
     </div>
@@ -238,14 +254,6 @@ function CategoryCard({ cat, onDraft }) {
 function App() {
   const [draftCat, setDraftCat] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
-
-  const tabs = [
-    { id:"all", label:"All" },
-    { id:"biotech", label:"🧬 Bio Pharma" },
-    { id:"it", label:"💻 IT Training" },
-    { id:"marketing", label:"📣 Marketing" },
-  ];
-
   const filtered = activeTab === "all" ? CATEGORIES : CATEGORIES.filter(c => c.id === activeTab);
 
   return (
@@ -264,7 +272,6 @@ function App() {
       </div>
 
       <div style={{ maxWidth:860, margin:"0 auto", padding:"20px 16px" }}>
-
         <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0a1a28)", border:"1px solid #132436", borderRadius:16, padding:"16px 20px", marginBottom:18 }}>
           <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:10 }}>REGISTERED ENTITY</div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:"8px 16px" }}>
@@ -277,17 +284,17 @@ function App() {
           </div>
         </div>
 
-        <div style={{ background:"linear-gradient(135deg,#0a1428,#0c1a30)", border:"1px solid #1a3a5a", borderRadius:12, padding:"12px 18px", marginBottom:18 }}>
-          <div style={{ color:"#4fc3f7", fontSize:11, fontWeight:700, marginBottom:4 }}>💡 HOW TO FILTER ON SAM.GOV</div>
-          <div style={{ color:"#2a5a78", fontSize:12, lineHeight:1.6 }}>
-            After clicking any search button, on SAM.gov you can manually add filters: <strong style={{color:"#6a9ab8"}}>Set Aside → Small Business</strong> · <strong style={{color:"#6a9ab8"}}>Place of Performance → NJ</strong> · <strong style={{color:"#6a9ab8"}}>Notice Type → Sources Sought</strong>
+        <div style={{ background:"linear-gradient(135deg,#0a1428,#0c1a30)", border:"1px solid #1a3a5a", borderRadius:12, padding:"11px 16px", marginBottom:18 }}>
+          <div style={{ color:"#4fc3f7", fontSize:11, fontWeight:700, marginBottom:3 }}>💡 TIP — Filter on SAM.gov after clicking any button</div>
+          <div style={{ color:"#2a5a78", fontSize:11, lineHeight:1.6 }}>
+            Add: <strong style={{color:"#6a9ab8"}}>Set Aside → Small Business</strong> &nbsp;·&nbsp; <strong style={{color:"#6a9ab8"}}>Place of Performance → NJ</strong> &nbsp;·&nbsp; <strong style={{color:"#6a9ab8"}}>Notice Type → Sources Sought</strong>
           </div>
         </div>
 
         <div style={{ display:"flex", gap:8, marginBottom:18, flexWrap:"wrap" }}>
-          {tabs.map(t => (
+          {TABS.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ background:activeTab===t.id?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28", color:activeTab===t.id?"#001a10":"#4a8aaa", border:activeTab===t.id?"none":"1px solid #132436", borderRadius:20, padding:"8px 20px", fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              style={{ background:activeTab===t.id?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28", color:activeTab===t.id?"#001a10":"#4a8aaa", border:activeTab===t.id?"none":"1px solid #132436", borderRadius:20, padding:"8px 18px", fontWeight:700, fontSize:12, cursor:"pointer" }}>
               {t.label}
             </button>
           ))}
@@ -298,12 +305,12 @@ function App() {
         <div style={{ background:"linear-gradient(135deg,#0a1e10,#081a0e)", border:"1px solid #0a3a1a", borderRadius:16, padding:"18px 20px", marginTop:8 }}>
           <div style={{ color:"#00c887", fontSize:11, fontWeight:700, letterSpacing:2, marginBottom:12 }}>📋 HOW TO USE</div>
           {[
-            ["🔍","All Contracts","Tap to expand — shows all active contracts for each NAICS. Add your own filters on SAM.gov"],
-            ["⭐","Best Match","NAICS + best keyword combo — most targeted results for that category"],
-            ["✦","Draft Proposal","Find a contract on SAM.gov, come back, paste title + agency, get a full AI proposal instantly"],
+            ["🔍","All Contracts","Tap to expand — opens SAM.gov for each NAICS code. Add your own filters there"],
+            ["⭐","Best Match","NAICS + validated keyword — most targeted results for that category"],
+            ["✦","Draft Proposal","Find a contract on SAM.gov, paste title + agency here, get a full AI proposal"],
           ].map(([icon,t,d]) => (
-            <div key={t} style={{ display:"flex", gap:12, marginBottom:12, alignItems:"flex-start" }}>
-              <div style={{ width:28, height:28, borderRadius:"50%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>{icon}</div>
+            <div key={t} style={{ display:"flex", gap:12, marginBottom:10, alignItems:"flex-start" }}>
+              <div style={{ width:26, height:26, borderRadius:"50%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>{icon}</div>
               <div>
                 <div style={{ color:"#00e5a0", fontSize:13, fontWeight:700, marginBottom:2 }}>{t}</div>
                 <div style={{ color:"#2a6a44", fontSize:12, lineHeight:1.5 }}>{d}</div>
