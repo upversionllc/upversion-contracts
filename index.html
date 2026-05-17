@@ -24,18 +24,16 @@ body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #dd
 
 const ANTHROPIC_API_KEY = "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";
 
-const SBA = "&sfm%5BtypeOfSetAside%5D=SBA&sfm%5BsetAside%5D%5B0%5D%5Bkey%5D=SBA&sfm%5BsetAside%5D%5B0%5D%5Bvalue%5D=Total%20Small%20Business%20Set-Aside%20(FAR%2019.5)";
 const BASE = "https://sam.gov/search/?index=opp&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL";
 
-function naics(sector, code) {
-  return "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
-}
-function kw(word) {
-  return "&sfm%5BsimpleSearch%5D%5BkeywordTags%5D%5B0%5D=" + encodeURIComponent(word);
+function makeUrl(sector, code, keyword) {
+  let url = BASE;
+  if (keyword) url += "&sfm%5BsimpleSearch%5D%5BkeywordTags%5D%5B0%5D=" + encodeURIComponent(keyword);
+  url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector;
+  url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
+  return url;
 }
 
-// Bio Pharma — 3 NAICS codes, show first one for "All", use pharmaceutical for best match
-// We show multiple NAICS by linking each separately
 const CATEGORIES = [
   {
     id: "biotech",
@@ -45,11 +43,11 @@ const CATEGORIES = [
     description: "Biotech & pharmaceutical manufacturing training — NIH, FDA, DOD, NJ state agencies.",
     accentColor: "#00c887",
     allUrls: [
-      { label: "611519 — Pharma Technical", url: BASE + naics("61","611519") + SBA },
-      { label: "611430 — Biotech Training", url: BASE + naics("61","611430") + SBA },
-      { label: "541714 — Biotech R&D", url: BASE + naics("54","541714") + SBA },
+      { label: "611519 — Pharma Technical Training", url: makeUrl("61","611519") },
+      { label: "611430 — Biotech Training", url: makeUrl("61","611430") },
+      { label: "541714 — Biotechnology R&D", url: makeUrl("54","541714") },
     ],
-    bestUrl: BASE + kw("pharmaceutical") + naics("61","611519") + SBA,
+    bestUrl: makeUrl("61","611519","pharmaceutical"),
     bestLabel: "pharmaceutical + NAICS 611519",
   },
   {
@@ -57,13 +55,13 @@ const CATEGORIES = [
     icon: "💻",
     label: "IT / Computer Training",
     naicsLabel: "NAICS 611420",
-    description: "IT workforce training, computer skills, technical training for federal agencies.",
+    description: "IT workforce training, computer skills, and technical training for federal agencies.",
     accentColor: "#4fc3f7",
     allUrls: [
-      { label: "611420 — Computer Training", url: BASE + naics("61","611420") + SBA },
+      { label: "611420 — Computer Training", url: makeUrl("61","611420") },
     ],
-    bestUrl: BASE + kw("computer training") + naics("61","611420") + SBA,
-    bestLabel: "computer training + NAICS 611420",
+    bestUrl: makeUrl("61","611420","training"),
+    bestLabel: "training + NAICS 611420",
   },
   {
     id: "marketing",
@@ -73,10 +71,10 @@ const CATEGORIES = [
     description: "Marketing strategy, outreach, and communications consulting for federal agencies.",
     accentColor: "#f0c040",
     allUrls: [
-      { label: "541613 — Marketing Consulting", url: BASE + naics("54","541613") + SBA },
+      { label: "541613 — Marketing Consulting", url: makeUrl("54","541613") },
     ],
-    bestUrl: BASE + kw("outreach") + naics("54","541613") + SBA,
-    bestLabel: "outreach + NAICS 541613",
+    bestUrl: makeUrl("54","541613","marketing services"),
+    bestLabel: "marketing services + NAICS 541613",
   },
 ];
 
@@ -175,32 +173,27 @@ function CategoryCard({ cat, onDraft }) {
   return (
     <div style={{ background:"linear-gradient(135deg,#0d1f30,#0f2438)", border:`1px solid ${c}22`, borderRadius:16, marginBottom:16, overflow:"hidden", boxShadow:`0 2px 20px ${c}10` }}>
       <div style={{ padding:"20px 22px" }}>
-
-        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
           <div>
             <div style={{ fontSize:28, marginBottom:6 }}>{cat.icon}</div>
             <div style={{ color:"#ddeeff", fontSize:18, fontWeight:700, fontFamily:"'DM Serif Display',Georgia,serif" }}>{cat.label}</div>
-            <div style={{ color:c, fontSize:10, fontWeight:700, marginTop:3, letterSpacing:0.5 }}>{cat.naicsLabel}</div>
+            <div style={{ color:c, fontSize:10, fontWeight:700, marginTop:3 }}>{cat.naicsLabel}</div>
             <div style={{ color:"#5a8aaa", fontSize:12, lineHeight:1.6, marginTop:6, maxWidth:480 }}>{cat.description}</div>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:4, alignItems:"flex-end", flexShrink:0, marginLeft:12 }}>
-            <span style={{ background:c+"18", border:`1px solid ${c}40`, color:c, fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>SMALL BIZ</span>
             <span style={{ background:"#0a2030", border:"1px solid #1a4060", color:"#4fc3f7", fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>ACTIVE</span>
             <span style={{ background:"#0a2030", border:"1px solid #1a4060", color:"#4fc3f7", fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>USA ONLY</span>
           </div>
         </div>
 
-        {/* Divider */}
         <div style={{ borderTop:`1px solid ${c}18`, marginBottom:14 }} />
 
-        {/* Button Row */}
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
 
-          {/* ALL button — toggles NAICS links */}
+          {/* ALL button */}
           <div style={{ flex:1, minWidth:120 }}>
             <button onClick={() => setShowAll(!showAll)}
-              style={{ width:"100%", background: showAll ? c : "#0a2030", color: showAll ? "#001a10" : c, border:`1px solid ${c}50`, borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, cursor:"pointer", transition:"all 0.2s" }}>
+              style={{ width:"100%", background:showAll ? c : "#0a2030", color:showAll ? "#001a10" : c, border:`1px solid ${c}50`, borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, cursor:"pointer", transition:"all 0.2s" }}>
               🔍 All Contracts {showAll ? "▲" : "▼"}
             </button>
             {showAll && (
@@ -211,6 +204,9 @@ function CategoryCard({ cat, onDraft }) {
                     {u.label} ↗
                   </a>
                 ))}
+                <div style={{ color:"#2a5a78", fontSize:10, padding:"4px 2px" }}>
+                  💡 On SAM.gov you can add Set-Aside filter manually
+                </div>
               </div>
             )}
           </div>
@@ -224,7 +220,7 @@ function CategoryCard({ cat, onDraft }) {
             <div style={{ color:"#2a5a78", fontSize:10, marginTop:5, textAlign:"center" }}>{cat.bestLabel}</div>
           </div>
 
-          {/* DRAFT PROPOSAL button */}
+          {/* DRAFT button */}
           <div style={{ flex:1, minWidth:120 }}>
             <button onClick={() => onDraft(cat)}
               style={{ width:"100%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:12, padding:"12px", fontWeight:800, fontSize:13, cursor:"pointer" }}>
@@ -254,8 +250,6 @@ function App() {
 
   return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)" }}>
-
-      {/* Header */}
       <div style={{ background:"rgba(4,14,30,0.96)", backdropFilter:"blur(14px)", borderBottom:"1px solid #0e2034", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:34, height:34, borderRadius:8, background:"linear-gradient(135deg,#00c887,#0088cc)", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:13, color:"#001a10" }}>UV</div>
@@ -271,7 +265,6 @@ function App() {
 
       <div style={{ maxWidth:860, margin:"0 auto", padding:"20px 16px" }}>
 
-        {/* Company Card */}
         <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0a1a28)", border:"1px solid #132436", borderRadius:16, padding:"16px 20px", marginBottom:18 }}>
           <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:10 }}>REGISTERED ENTITY</div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:"8px 16px" }}>
@@ -284,7 +277,13 @@ function App() {
           </div>
         </div>
 
-        {/* Tabs */}
+        <div style={{ background:"linear-gradient(135deg,#0a1428,#0c1a30)", border:"1px solid #1a3a5a", borderRadius:12, padding:"12px 18px", marginBottom:18 }}>
+          <div style={{ color:"#4fc3f7", fontSize:11, fontWeight:700, marginBottom:4 }}>💡 HOW TO FILTER ON SAM.GOV</div>
+          <div style={{ color:"#2a5a78", fontSize:12, lineHeight:1.6 }}>
+            After clicking any search button, on SAM.gov you can manually add filters: <strong style={{color:"#6a9ab8"}}>Set Aside → Small Business</strong> · <strong style={{color:"#6a9ab8"}}>Place of Performance → NJ</strong> · <strong style={{color:"#6a9ab8"}}>Notice Type → Sources Sought</strong>
+          </div>
+        </div>
+
         <div style={{ display:"flex", gap:8, marginBottom:18, flexWrap:"wrap" }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -296,13 +295,12 @@ function App() {
 
         {filtered.map(cat => <CategoryCard key={cat.id} cat={cat} onDraft={setDraftCat} />)}
 
-        {/* How to use */}
         <div style={{ background:"linear-gradient(135deg,#0a1e10,#081a0e)", border:"1px solid #0a3a1a", borderRadius:16, padding:"18px 20px", marginTop:8 }}>
           <div style={{ color:"#00c887", fontSize:11, fontWeight:700, letterSpacing:2, marginBottom:12 }}>📋 HOW TO USE</div>
           {[
-            ["🔍","All Contracts","Shows every SBA + Active contract for that NAICS — broad search, scroll to find your fit"],
-            ["⭐","Best Match","NAICS + validated keyword — most targeted results, fewer but highly relevant"],
-            ["✦","Draft Proposal","Find a contract on SAM.gov, come back, paste the title + agency, get a full AI proposal"],
+            ["🔍","All Contracts","Tap to expand — shows all active contracts for each NAICS. Add your own filters on SAM.gov"],
+            ["⭐","Best Match","NAICS + best keyword combo — most targeted results for that category"],
+            ["✦","Draft Proposal","Find a contract on SAM.gov, come back, paste title + agency, get a full AI proposal instantly"],
           ].map(([icon,t,d]) => (
             <div key={t} style={{ display:"flex", gap:12, marginBottom:12, alignItems:"flex-start" }}>
               <div style={{ width:28, height:28, borderRadius:"50%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>{icon}</div>
@@ -316,7 +314,7 @@ function App() {
       </div>
 
       <div style={{ textAlign:"center", padding:"20px", color:"#0e2a40", fontSize:11, borderTop:"1px solid #0a1e30", marginTop:20 }}>
-        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Small Business · Active · USA · Powered by Claude AI + SAM.gov
+        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by Claude AI + SAM.gov
       </div>
 
       {draftCat && <ProposalModal cat={draftCat} onClose={() => setDraftCat(null)} />}
