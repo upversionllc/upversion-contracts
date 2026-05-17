@@ -35,8 +35,8 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  // SAM.gov Awards - Inactive/Closed = past winners, Active = recent awards
-  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + USA;
+  // FPDS.gov - original federal contracts database, always has data, no login needed
+  return "https://www.fpds.gov/ezsearch/search.do?indexName=awardfull&templateName=1.5.3&s=FPDS.GOV&q=NAICS_CODE%3A%22" + code + "%22&x=0&y=0";
 }
 
 function extractNoticeId(url) {
