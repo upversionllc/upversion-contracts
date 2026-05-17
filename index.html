@@ -466,12 +466,14 @@ function ProposalModal({ row, cat, savedData, onClose }) {
         )}
 
         {phase==="done" && (
-          <div style={{padding:"10px 20px",borderTop:"1px solid #1a3a5a",display:"flex",gap:8,flexShrink:0,background:"#0a1628",flexWrap:"wrap"}}>
-            <button onClick={()=>navigator.clipboard.writeText(proposal)} style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copy</button>
-            <button onClick={()=>downloadAsWord(proposal,resolvedId,title,agency,cat,row)} style={{background:"#0a2030",color:"#00c887",border:"1px solid #00c88740",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>📄 Download Word</button>
-            <button onClick={()=>{setPhase("input");setProposal("");setQualityScore(null);setQualityChecks([]);setHumanChecks([]);}} style={{background:"#0a2030",color:"#6a8aa8",border:"1px solid #1a3a5a",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>↺ Redo</button>
-            {saved && <span style={{color:"#00c887",fontSize:11,display:"flex",alignItems:"center"}}>💾 Saved</span>}
-            <button onClick={onClose} style={{marginLeft:"auto",background:humanDone?"#00c887":"linear-gradient(135deg,#00c887,#0088cc)",color:"#001a10",border:"none",borderRadius:6,padding:"7px 20px",fontWeight:800,fontSize:13,cursor:"pointer"}}>{humanDone?"✅ Submit Ready!":"Done"}</button>
+          <div style={{padding:"10px 20px",borderTop:"1px solid #1a3a5a",flexShrink:0,background:"#0a1628"}}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:6}}>
+              <button onClick={()=>navigator.clipboard.writeText(proposal)} style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>📋 Copy</button>
+              <button onClick={()=>downloadAsWord(proposal,resolvedId,title,agency,cat,row)} style={{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>📄 Download Word</button>
+              <button onClick={()=>{setPhase("input");setProposal("");setQualityScore(null);setQualityChecks([]);setHumanChecks([]);}} style={{background:"#0a2030",color:"#6a8aa8",border:"1px solid #1a3a5a",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>↺ Redo</button>
+              {saved && <span style={{color:"#00c887",fontSize:11,display:"flex",alignItems:"center"}}>💾 Saved</span>}
+            </div>
+            <button onClick={onClose} style={{width:"100%",background:humanDone?"#00c887":"linear-gradient(135deg,#1a6fb5,#0088cc)",color:humanDone?"#001a10":"#fff",border:"none",borderRadius:6,padding:"10px",fontWeight:800,fontSize:13,cursor:"pointer"}}>{humanDone?"✅ Submit Ready!":"Done"}</button>
           </div>
         )}
       </div>
