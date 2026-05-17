@@ -11,7 +11,6 @@ export default async function handler(req, res) {
 
     let pageContent = "";
 
-    // If fetchUrl provided, fetch the SAM.gov page first
     if (fetchUrl) {
       try {
         const pageRes = await fetch(fetchUrl, {
@@ -21,7 +20,6 @@ export default async function handler(req, res) {
           }
         });
         const html = await pageRes.text();
-        // Strip HTML tags to get readable text
         const text = html
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -35,7 +33,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Build final prompt with page content if available
     const finalPrompt = pageContent
       ? `${prompt}\n\n--- SAM.GOV PAGE CONTENT ---\n${pageContent}`
       : prompt;
@@ -49,7 +46,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-opus-4-7",
-        max_tokens: 1000,
+        max_tokens: 4000,
         messages: [{ role: "user", content: finalPrompt }]
       })
     });
@@ -63,7 +60,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Return page content too so frontend knows what was read
     res.status(200).json({ ...data, pageRead: !!pageContent, pagePreview: pageContent.slice(0, 100) });
 
   } catch(e) {
