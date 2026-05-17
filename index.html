@@ -157,6 +157,7 @@ function ProposalModal({ row, cat, onClose }) {
   const [qualityChecks, setQualityChecks] = React.useState([]);
   const [humanChecks, setHumanChecks] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
+  const [showUpload, setShowUpload] = React.useState(false);
   const fileRef = React.useRef();
  
   // Saved to localStorage
@@ -374,44 +375,67 @@ ${full.slice(0, 3000)}`;
  
             <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
  
-            {/* File Upload */}
-            <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>📎 UPLOAD ATTACHMENTS (OPTIONAL)</div>
-            <div
-              onDragOver={e=>{e.preventDefault();setDragging(true);}}
-              onDragLeave={()=>setDragging(false)}
-              onDrop={handleDrop}
-              onClick={()=>fileRef.current.click()}
-              style={{border:`2px dashed ${dragging?"#00c887":"#1e3a5a"}`,borderRadius:12,padding:"20px",textAlign:"center",cursor:"pointer",background:dragging?"#0a2a18":"#060f1c",transition:"all 0.2s",marginBottom:10}}>
-              <div style={{fontSize:28,marginBottom:8}}>📁</div>
-              <div style={{color:dragging?"#00e5a0":"#3a6a8a",fontSize:13,fontWeight:600}}>
-                {dragging ? "Drop files here!" : "Drag & drop files OR click to browse"}
+            {/* Option B — Two paths */}
+            {!showUpload ? (
+              <div>
+                <div style={{background:"linear-gradient(135deg,#0a1e10,#081a0e)",border:"1px solid #00c88730",borderRadius:12,padding:"14px",marginBottom:14,textAlign:"center"}}>
+                  <div style={{fontSize:22,marginBottom:6}}>💡</div>
+                  <div style={{color:"#00e5a0",fontSize:12,fontWeight:700,marginBottom:4}}>Want a more tailored proposal?</div>
+                  <div style={{color:"#2a6a44",fontSize:11,lineHeight:1.6,marginBottom:12}}>Download attachments from SAM.gov first (SOW, technical docs, forms), then upload them here. UpAI will read everything and write a perfectly targeted proposal.</div>
+                  <button onClick={()=>setShowUpload(true)}
+                    style={{background:"#0a2a18",color:"#00c887",border:"1px solid #00c88740",borderRadius:10,padding:"9px 20px",fontWeight:700,fontSize:12,cursor:"pointer",width:"100%",marginBottom:8}}>
+                    📎 Upload Attachments First
+                  </button>
+                  <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
+                    style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:10,padding:"10px",fontWeight:800,fontSize:14,cursor:(resolvedId||title||agency)?"pointer":"not-allowed"}}>
+                    ✦ Draft Now (no attachments)
+                  </button>
+                </div>
               </div>
-              <div style={{color:"#2a4a68",fontSize:11,marginTop:4}}>PDF, DOCX, TXT — multiple files supported</div>
-              <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.doc" onChange={handleFileInput} style={{display:"none"}}/>
-            </div>
- 
-            {files.length > 0 && (
-              <div style={{marginBottom:16}}>
-                {files.map((f,i) => (
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0a2a18",border:"1px solid #00c88730",borderRadius:9,padding:"8px 12px",marginBottom:6}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:16}}>📄</span>
-                      <div>
-                        <div style={{color:"#00e5a0",fontSize:12,fontWeight:600}}>{f.name}</div>
-                        <div style={{color:"#2a6a44",fontSize:10}}>{(f.size/1024).toFixed(1)} KB</div>
-                      </div>
-                    </div>
-                    <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#ff4d6d",cursor:"pointer",fontSize:16}}>✕</button>
+            ) : (
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1}}>📎 UPLOAD ATTACHMENTS</div>
+                  <button onClick={()=>setShowUpload(false)} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Skip → Draft without</button>
+                </div>
+                <div
+                  onDragOver={e=>{e.preventDefault();setDragging(true);}}
+                  onDragLeave={()=>setDragging(false)}
+                  onDrop={handleDrop}
+                  onClick={()=>fileRef.current.click()}
+                  style={{border:`2px dashed ${dragging?"#00c887":"#1e3a5a"}`,borderRadius:12,padding:"20px",textAlign:"center",cursor:"pointer",background:dragging?"#0a2a18":"#060f1c",transition:"all 0.2s",marginBottom:10}}>
+                  <div style={{fontSize:28,marginBottom:8}}>📁</div>
+                  <div style={{color:dragging?"#00e5a0":"#3a6a8a",fontSize:13,fontWeight:600}}>
+                    {dragging ? "Drop files here!" : "Drag & drop files OR click to browse"}
                   </div>
-                ))}
-                <div style={{color:"#00c887",fontSize:11,textAlign:"center"}}>✓ {files.length} file{files.length>1?"s":""} ready — UpAI will read {files.length>1?"them":"it"}</div>
+                  <div style={{color:"#2a4a68",fontSize:11,marginTop:4}}>PDF, DOCX, TXT — multiple files supported</div>
+                  <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.doc" onChange={handleFileInput} style={{display:"none"}}/>
+                </div>
+ 
+                {files.length > 0 && (
+                  <div style={{marginBottom:12}}>
+                    {files.map((f,i) => (
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0a2a18",border:"1px solid #00c88730",borderRadius:9,padding:"8px 12px",marginBottom:6}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontSize:16}}>📄</span>
+                          <div>
+                            <div style={{color:"#00e5a0",fontSize:12,fontWeight:600}}>{f.name}</div>
+                            <div style={{color:"#2a6a44",fontSize:10}}>{(f.size/1024).toFixed(1)} KB</div>
+                          </div>
+                        </div>
+                        <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#ff4d6d",cursor:"pointer",fontSize:16}}>✕</button>
+                      </div>
+                    ))}
+                    <div style={{color:"#00c887",fontSize:11,textAlign:"center",marginBottom:10}}>✓ {files.length} file{files.length>1?"s":""} ready — UpAI will read {files.length>1?"them":"it"}</div>
+                  </div>
+                )}
+ 
+                <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
+                  style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:11,padding:14,fontWeight:800,fontSize:15,cursor:(resolvedId||title||agency)?"pointer":"not-allowed"}}>
+                  {files.length > 0 ? `✦ UpAI — Read ${files.length} File${files.length>1?"s":""} & Draft` : "✦ UpAI — Draft Proposal"}
+                </button>
               </div>
             )}
- 
-            <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
-              style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:11,padding:14,fontWeight:800,fontSize:15,cursor:(resolvedId||title||agency)?"pointer":"not-allowed",transition:"all 0.3s"}}>
-              {files.length > 0 ? `✦ UpAI — Read ${files.length} File${files.length>1?"s":""} & Draft Proposal` : "✦ UpAI — Draft Proposal"}
-            </button>
           </div>
         )}
  
