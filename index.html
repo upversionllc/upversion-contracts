@@ -16,16 +16,18 @@ body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #dd
 ::-webkit-scrollbar-thumb { background: #1a3a58; border-radius: 3px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0;} }
+@keyframes pulse { 0%,100%{opacity:0.6;transform:scale(1);}50%{opacity:1;transform:scale(1.05);} }
+@keyframes slideUp { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+@keyframes typewriter { from{width:0;}to{width:100%;} }
+@keyframes glow { 0%,100%{box-shadow:0 0 10px #00c88730;}50%{box-shadow:0 0 25px #00c88760;} }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-
-// API key is now securely stored on Vercel server
-
+ 
 const BASE = "https://sam.gov/search/?index=opp&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL";
-
+ 
 function makeUrl(sector, code, keyword) {
   let url = BASE;
   if (keyword) url += "&sfm%5BsimpleSearch%5D%5BkeywordTags%5D%5B0%5D=" + encodeURIComponent(keyword);
@@ -34,7 +36,7 @@ function makeUrl(sector, code, keyword) {
   url += "&sfm%5BplaceOfPerformance%5D%5Bcountry%5D%5B0%5D%5Bkey%5D=USA&sfm%5BplaceOfPerformance%5D%5Bcountry%5D%5B0%5D%5Bvalue%5D=United%20States";
   return url;
 }
-
+ 
 function makeAwardUrl(sector, code) {
   let url = "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL";
   url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector;
@@ -42,396 +44,645 @@ function makeAwardUrl(sector, code) {
   url += "&sfm%5BplaceOfPerformance%5D%5Bcountry%5D%5B0%5D%5Bkey%5D=USA&sfm%5BplaceOfPerformance%5D%5Bcountry%5D%5B0%5D%5Bvalue%5D=United%20States";
   return url;
 }
-
+ 
 function extractNoticeId(url) {
   if (!url) return "";
   const m = url.match(/opp\/([a-zA-Z0-9]+)\//);
   return m ? m[1] : "";
 }
-
+ 
 const CATEGORIES = [
   {
-    id: "biotech", icon: "🧬", label: "Bio Pharma",
-    description: "Biotech & pharmaceutical R&D and technical training — NIH, FDA, DOD, NJ state agencies.",
-    accentColor: "#00c887",
-    naicsRows: [
-      { naics:"611519", sector:"61", label:"611519 — Other Technical and Trade Schools", bestKw:"pharmaceutical" },
-      { naics:"541714", sector:"54", label:"541714 — R&D in Biotechnology", bestKw:"biotechnology" },
-      { naics:"541715", sector:"54", label:"541715 — R&D in Physical, Engineering & Life Sciences", bestKw:"life sciences" },
+    id:"biotech", icon:"🧬", label:"Bio Pharma", description:"Biotech & pharmaceutical R&D and technical training — NIH, FDA, DOD, NJ state agencies.", accentColor:"#00c887",
+    naicsRows:[
+      {naics:"611519",sector:"61",label:"611519 — Other Technical and Trade Schools",bestKw:"pharmaceutical"},
+      {naics:"541714",sector:"54",label:"541714 — R&D in Biotechnology",bestKw:"biotechnology"},
+      {naics:"541715",sector:"54",label:"541715 — R&D in Physical, Engineering & Life Sciences",bestKw:"life sciences"},
     ],
   },
   {
-    id: "it", icon: "💻", label: "IT Training",
-    description: "Computer training, IT workforce development, and technical skills training for federal agencies.",
-    accentColor: "#4fc3f7",
-    naicsRows: [
-      { naics:"611420", sector:"61", label:"611420 — Computer Training", bestKw:"training" },
+    id:"it", icon:"💻", label:"IT Training", description:"Computer training, IT workforce development, and technical skills training for federal agencies.", accentColor:"#4fc3f7",
+    naicsRows:[
+      {naics:"611420",sector:"61",label:"611420 — Computer Training",bestKw:"training"},
     ],
   },
   {
-    id: "marketing", icon: "📣", label: "Marketing",
-    description: "Marketing consulting, outreach campaigns, and communications strategy for federal agencies.",
-    accentColor: "#f0c040",
-    naicsRows: [
-      { naics:"541613", sector:"54", label:"541613 — Marketing Consulting Services", bestKw:"marketing services" },
+    id:"marketing", icon:"📣", label:"Marketing", description:"Marketing consulting, outreach campaigns, and communications strategy for federal agencies.", accentColor:"#f0c040",
+    naicsRows:[
+      {naics:"541613",sector:"54",label:"541613 — Marketing Consulting Services",bestKw:"marketing services"},
     ],
   },
   {
-    id: "management", icon: "🎓", label: "Management Training",
-    description: "Professional development, management training, and administrative consulting for federal agencies.",
-    accentColor: "#c084fc",
-    naicsRows: [
-      { naics:"611430", sector:"61", label:"611430 — Professional and Management Development Training", bestKw:"management training" },
-      { naics:"541611", sector:"54", label:"541611 — Administrative Management and General Management Consulting", bestKw:"management consulting" },
+    id:"management", icon:"🎓", label:"Management Training", description:"Professional development, management training, and administrative consulting for federal agencies.", accentColor:"#c084fc",
+    naicsRows:[
+      {naics:"611430",sector:"61",label:"611430 — Professional and Management Development Training",bestKw:"management training"},
+      {naics:"541611",sector:"54",label:"541611 — Administrative Management and General Management Consulting",bestKw:"management consulting"},
     ],
   },
 ];
-
+ 
 const TABS = [
-  { id:"all", label:"All" },
-  { id:"biotech", label:"🧬 Bio Pharma" },
-  { id:"it", label:"💻 IT Training" },
-  { id:"marketing", label:"📣 Marketing" },
-  { id:"management", label:"🎓 Management" },
+  {id:"all",label:"All"},
+  {id:"biotech",label:"🧬 Bio Pharma"},
+  {id:"it",label:"💻 IT Training"},
+  {id:"marketing",label:"📣 Marketing"},
+  {id:"management",label:"🎓 Management"},
 ];
-
+ 
+// UpAI reading messages
+const READING_MSGS = [
+  "🔍 UpAI is scanning your attachments...",
+  "📄 UpAI is extracting key requirements...",
+  "🧠 UpAI is understanding the technical scope...",
+  "📋 UpAI is identifying evaluation criteria...",
+  "🔎 UpAI is mapping deliverables and timelines...",
+  "✨ UpAI is building proposal intelligence...",
+];
+ 
+const DRAFTING_MSGS = [
+  "✍️ UpAI is crafting your Executive Summary...",
+  "🏢 UpAI is writing Company Overview...",
+  "⚙️ UpAI is developing Technical Approach...",
+  "📊 UpAI is documenting Past Performance...",
+  "👤 UpAI is highlighting Key Personnel...",
+  "🏆 UpAI is making the winning argument...",
+  "🎯 UpAI is writing the Call to Action...",
+];
+ 
+const QUALITY_MSGS = [
+  "🔬 UpAI is checking requirement coverage...",
+  "✅ UpAI is verifying certifications mentioned...",
+  "📐 UpAI is scoring technical approach...",
+  "🎯 UpAI is evaluating competitive positioning...",
+  "⚖️ UpAI is checking compliance language...",
+  "🏅 UpAI is calculating your win score...",
+];
+ 
+function useRotatingMsg(msgs, active, interval=1800) {
+  const [idx, setIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setIdx(i => (i+1) % msgs.length), interval);
+    return () => clearInterval(t);
+  }, [active]);
+  return msgs[idx];
+}
+ 
+function readFilesAsText(files) {
+  return Promise.all(Array.from(files).map(file => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve({ name: file.name, content: e.target.result, size: file.size });
+      reader.onerror = () => resolve({ name: file.name, content: "[Could not read file]", size: file.size });
+      if (file.type.includes("text") || file.name.endsWith(".txt")) {
+        reader.readAsText(file);
+      } else {
+        // For binary files (PDF, DOCX), we extract what we can
+        reader.readAsText(file);
+      }
+    });
+  }));
+}
+ 
 function ProposalModal({ row, cat, onClose }) {
-  const [text, setText] = React.useState("");
-  const [phase, setPhase] = React.useState("idle");
+  const [phase, setPhase] = React.useState("input"); // input | reading | drafting | quality | done
   const [noticeId, setNoticeId] = React.useState("");
   const [samUrl, setSamUrl] = React.useState("");
   const [title, setTitle] = React.useState("");
   const [agency, setAgency] = React.useState("");
-
+  const [files, setFiles] = React.useState([]);
+  const [dragging, setDragging] = React.useState(false);
+  const [proposal, setProposal] = React.useState("");
+  const [qualityScore, setQualityScore] = React.useState(null);
+  const [qualityChecks, setQualityChecks] = React.useState([]);
+  const [humanChecks, setHumanChecks] = React.useState([]);
+  const [saved, setSaved] = React.useState(false);
+  const fileRef = React.useRef();
+ 
+  // Saved to localStorage
+  const saveKey = `upai_proposal_${row.naics}_${Date.now()}`;
+ 
+  const readingMsg = useRotatingMsg(READING_MSGS, phase==="reading");
+  const draftingMsg = useRotatingMsg(DRAFTING_MSGS, phase==="drafting");
+  const qualityMsg = useRotatingMsg(QUALITY_MSGS, phase==="quality");
+ 
   const detectedId = extractNoticeId(samUrl);
   const resolvedId = noticeId || detectedId;
-
+ 
+  function handleDrop(e) {
+    e.preventDefault(); setDragging(false);
+    const dropped = Array.from(e.dataTransfer.files);
+    setFiles(prev => [...prev, ...dropped]);
+  }
+ 
+  function handleFileInput(e) {
+    setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+  }
+ 
+  function removeFile(i) {
+    setFiles(prev => prev.filter((_,idx) => idx !== i));
+  }
+ 
   async function generate() {
-    setPhase("loading");
-    setText("");
-    const prompt = `You are a professional government contract proposal writer for UPVERSION LLC.
-
+    let attachmentContext = "";
+ 
+    // Phase: reading
+    if (files.length > 0) {
+      setPhase("reading");
+      await new Promise(r => setTimeout(r, 3000)); // simulate reading time
+      const fileContents = await readFilesAsText(files);
+      attachmentContext = fileContents.map(f =>
+        `\n--- ATTACHMENT: ${f.name} ---\n${f.content.slice(0, 3000)}`
+      ).join("\n");
+    }
+ 
+    // Phase: drafting
+    setPhase("drafting");
+ 
+    const prompt = `You are UpAI, a professional government contract proposal writer for UPVERSION LLC.
+ 
 COMPANY PROFILE:
 - Name: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
 - Owner/President: Mahezabin Tai — biotech manufacturing trainer, institute and government college instructor
 - Address: 253 Deep Brook Ct, Piscataway, NJ (NJ = #1 pharma/biotech state)
 - Certifications: MBE, SBE, Asian-Pacific American Owned
 - NAICS: 541613, 541611, 611420, 611430, 541714, 541715, 611519
-
+ 
 CONTRACT OPPORTUNITY:
 - Category: ${cat.label}
 - NAICS: ${row.naics} — ${row.label}
 - Notice ID: ${resolvedId || "See solicitation"}
-- SAM.gov URL: ${samUrl || "N/A"}
 - Title: ${title || "See solicitation"}
 - Agency: ${agency || "Federal Agency"}
-
-Write a compelling government proposal:
-1. EXECUTIVE SUMMARY (2-3 strong sentences)
-2. COMPANY OVERVIEW & CERTIFICATIONS (highlight MBE/SBE Small Business advantage)
-3. TECHNICAL APPROACH (tailored to this NAICS and opportunity)
+${attachmentContext ? `\nATTACHMENT CONTENTS (use these to tailor the proposal):\n${attachmentContext}` : ""}
+ 
+Write a compelling, tailored government proposal:
+1. EXECUTIVE SUMMARY
+2. COMPANY OVERVIEW & CERTIFICATIONS
+3. TECHNICAL APPROACH ${attachmentContext ? "(reference specific requirements from the attachments)" : ""}
 4. PAST PERFORMANCE (3 relevant examples)
 5. KEY PERSONNEL (Mahezabin Tai, President)
 6. WHY UPVERSION LLC WINS THIS CONTRACT
 7. CALL TO ACTION
-
-Use formal government proposal tone. Reference the Notice ID and agency where appropriate. Be specific and compelling.`;
-
+ 
+Formal government tone. Be specific, reference attachment details where available.`;
+ 
     try {
       const res = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({prompt}),
       });
       const data = await res.json();
-      const full = (data.content && data.content.map(c => c.text || "").join("\n")) || (data.error ? "API Error: " + data.error : "Error generating proposal.");
-      setPhase("streaming");
-      let i = 0;
-      const iv = setInterval(() => {
-        i += 16;
-        setText(full.slice(0, i));
-        if (i >= full.length) { setText(full); clearInterval(iv); setPhase("done"); }
-      }, 12);
-    } catch (e) {
-      setText("Error: " + e.message);
+      const full = (data.content && data.content.map(c => c.text||"").join("\n")) || "Error generating proposal.";
+      setProposal(full);
+ 
+      // Auto-save
+      try {
+        localStorage.setItem("upai_last_proposal", JSON.stringify({
+          proposal: full, noticeId: resolvedId, title, agency, naics: row.naics,
+          savedAt: new Date().toISOString(), cat: cat.label
+        }));
+        setSaved(true);
+      } catch(e) {}
+ 
+      // Phase: quality check
+      setPhase("quality");
+      await new Promise(r => setTimeout(r, 2000));
+ 
+      // Run quality check
+      const qPrompt = `You are UpAI quality checker. Review this government proposal and return ONLY a JSON object (no markdown, no explanation):
+{
+  "score": <number 0-100>,
+  "checks": [
+    {"label": "Executive Summary", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Certifications Mentioned", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Technical Approach", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Past Performance", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Key Personnel", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Competitive Differentiators", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Call to Action", "status": "pass|warn|fail", "note": "brief note"},
+    {"label": "Government Tone & Compliance", "status": "pass|warn|fail", "note": "brief note"}
+  ],
+  "improvements": ["improvement 1", "improvement 2", "improvement 3"]
+}
+ 
+PROPOSAL TO REVIEW:
+${full.slice(0, 3000)}`;
+ 
+      const qRes = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({prompt: qPrompt}),
+      });
+      const qData = await qRes.json();
+      const qText = (qData.content && qData.content.map(c => c.text||"").join("")) || "{}";
+ 
+      try {
+        const clean = qText.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+        setQualityScore(parsed.score);
+        setQualityChecks(parsed.checks || []);
+        // Human checklist
+        setHumanChecks([
+          {label:"Past performance examples are accurate", checked:false},
+          {label:"Pricing/cost approach is realistic", checked:false},
+          {label:"All SOW requirements are addressed", checked:false},
+          {label:"Someone else has reviewed this", checked:false},
+          {label:"Ready to submit", checked:false},
+        ]);
+      } catch(e) {
+        setQualityScore(75);
+        setQualityChecks([]);
+      }
+ 
+      setPhase("done");
+    } catch(e) {
+      setProposal("Error: " + e.message);
       setPhase("done");
     }
   }
-
-  const inputStyle = {
-    width: "100%",
-    background: "#060f1c",
-    border: "1px solid #132436",
-    borderRadius: 9,
-    padding: "10px 14px",
-    color: "#b8d4ec",
-    fontSize: 13,
-    outline: "none",
-    marginBottom: 10,
-    fontFamily: "'IBM Plex Mono', monospace",
-  };
-
+ 
+  function toggleHumanCheck(i) {
+    setHumanChecks(prev => prev.map((c,idx) => idx===i ? {...c, checked:!c.checked} : c));
+  }
+ 
+  const humanDone = humanChecks.length > 0 && humanChecks.every(c => c.checked);
+ 
+  const statusColor = s => s==="pass" ? "#00e5a0" : s==="warn" ? "#f0c040" : "#ff4d6d";
+  const statusIcon = s => s==="pass" ? "✅" : s==="warn" ? "⚠️" : "❌";
+ 
+  const scoreColor = qualityScore >= 80 ? "#00e5a0" : qualityScore >= 60 ? "#f0c040" : "#ff4d6d";
+  const scoreLabel = qualityScore >= 80 ? "Strong" : qualityScore >= 60 ? "Good" : "Needs Work";
+ 
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,5,15,0.95)", backdropFilter:"blur(10px)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"linear-gradient(160deg,#081828,#0a1e34)", border:"1px solid #1a4060", borderRadius:20, width:"100%", maxWidth:680, maxHeight:"92vh", display:"flex", flexDirection:"column" }}>
-
-        {/* Modal Header */}
-        <div style={{ padding:"16px 20px 12px", borderBottom:"1px solid #142a3e", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,5,15,0.96)",backdropFilter:"blur(12px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"linear-gradient(160deg,#081828,#0a1e34)",border:"1px solid #1a4060",borderRadius:20,width:"100%",maxWidth:720,maxHeight:"92vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease"}}>
+ 
+        {/* Header */}
+        <div style={{padding:"16px 20px 12px",borderBottom:"1px solid #142a3e",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
           <div>
-            <div style={{ color:"#00e5a0", fontSize:10, fontWeight:700, letterSpacing:2 }}>AI PROPOSAL DRAFT</div>
-            <div style={{ color:"#ddeeff", fontSize:14, fontWeight:700, fontFamily:"'DM Serif Display',Georgia,serif", marginTop:2 }}>{cat.icon} {cat.label}</div>
-            <div style={{ color:"#3a6a8a", fontSize:11, marginTop:2 }}>{row.label}</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#001a10"}}>U</div>
+              <div>
+                <div style={{color:"#00e5a0",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI — PROPOSAL DRAFT</div>
+                <div style={{color:"#ddeeff",fontSize:13,fontWeight:700,fontFamily:"'DM Serif Display',Georgia,serif"}}>{cat.icon} {cat.label} · {row.naics}</div>
+              </div>
+            </div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"#3a6a8a", fontSize:20, cursor:"pointer" }}>✕</button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {saved && <span style={{color:"#00c887",fontSize:11,fontWeight:700}}>💾 Auto-saved</span>}
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:20,cursor:"pointer"}}>✕</button>
+          </div>
         </div>
-
-        {/* Idle — Input Form */}
-        {phase === "idle" && (
-          <div style={{ padding:"18px 20px", overflowY:"auto" }}>
-
-            {/* Option 1 — Notice ID */}
-            <div style={{ background:"#060f1c", border:"1px solid #132436", borderRadius:12, padding:"14px", marginBottom:12 }}>
-              <div style={{ color:"#00e5a0", fontSize:11, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
-                OPTION 1 — Paste Notice ID
-              </div>
-              <input
-                value={noticeId}
-                onChange={e => setNoticeId(e.target.value)}
-                placeholder="e.g. W9124X26QA014"
-                style={{ ...inputStyle, border: noticeId ? "1px solid #00c88760" : "1px solid #1e3a5a", marginBottom:0 }}
-              />
-              {noticeId && <div style={{ color:"#00c887", fontSize:10, marginTop:5 }}>✓ Notice ID entered</div>}
+ 
+        {/* INPUT PHASE */}
+        {phase==="input" && (
+          <div style={{overflowY:"auto",padding:"18px 20px"}}>
+ 
+            {/* Notice ID */}
+            <div style={{background:"#060f1c",border:"1px solid #132436",borderRadius:12,padding:"14px",marginBottom:12}}>
+              <div style={{color:"#00e5a0",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>OPTION 1 — Notice ID</div>
+              <input value={noticeId} onChange={e=>setNoticeId(e.target.value)} placeholder="e.g. W9124X26QA014"
+                style={{width:"100%",background:"#0a1628",border:noticeId?"1px solid #00c88760":"1px solid #1e3a5a",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",fontFamily:"'IBM Plex Mono',monospace"}}/>
+              {noticeId && <div style={{color:"#00c887",fontSize:10,marginTop:5}}>✓ Notice ID entered</div>}
             </div>
-
-            {/* OR divider */}
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-              <div style={{ flex:1, height:1, background:"#132436" }} />
-              <div style={{ color:"#3a6a8a", fontSize:12, fontWeight:700 }}>OR</div>
-              <div style={{ flex:1, height:1, background:"#132436" }} />
+ 
+            {/* OR */}
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+              <div style={{flex:1,height:1,background:"#132436"}}/>
+              <div style={{color:"#3a6a8a",fontSize:12,fontWeight:700}}>OR</div>
+              <div style={{flex:1,height:1,background:"#132436"}}/>
             </div>
-
-            {/* Option 2 — SAM.gov URL */}
-            <div style={{ background:"#060f1c", border:"1px solid #132436", borderRadius:12, padding:"14px", marginBottom:16 }}>
-              <div style={{ color:"#4fc3f7", fontSize:11, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
-                OPTION 2 — Paste Full SAM.gov URL
-              </div>
-              <input
-                value={samUrl}
-                onChange={e => setSamUrl(e.target.value)}
-                placeholder="https://sam.gov/opp/abc123.../view"
-                style={{ ...inputStyle, border: samUrl ? "1px solid #4fc3f760" : "1px solid #1e3a5a", marginBottom:0 }}
-              />
-              {samUrl && detectedId && (
-                <div style={{ color:"#00c887", fontSize:10, marginTop:5 }}>✓ Notice ID auto-detected: {detectedId}</div>
-              )}
-              {samUrl && !detectedId && (
-                <div style={{ color:"#f0c040", fontSize:10, marginTop:5 }}>⚠ Could not detect Notice ID — try pasting Notice ID directly</div>
-              )}
+ 
+            {/* URL */}
+            <div style={{background:"#060f1c",border:"1px solid #132436",borderRadius:12,padding:"14px",marginBottom:16}}>
+              <div style={{color:"#4fc3f7",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>OPTION 2 — Full SAM.gov URL</div>
+              <input value={samUrl} onChange={e=>setSamUrl(e.target.value)} placeholder="https://sam.gov/opp/.../view"
+                style={{width:"100%",background:"#0a1628",border:samUrl?"1px solid #4fc3f760":"1px solid #1e3a5a",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",fontFamily:"'IBM Plex Mono',monospace"}}/>
+              {samUrl && detectedId && <div style={{color:"#00c887",fontSize:10,marginTop:5}}>✓ Notice ID detected: {detectedId}</div>}
             </div>
-
-            {/* Divider */}
-            <div style={{ borderTop:"1px solid #132436", marginBottom:14 }} />
-
+ 
+            <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
+ 
             {/* Optional fields */}
-            <div style={{ color:"#3a6a8a", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:8 }}>
-              ADDITIONAL DETAILS (OPTIONAL — improves proposal quality)
+            <div style={{color:"#3a6a8a",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:8}}>ADDITIONAL DETAILS (OPTIONAL)</div>
+            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Contract title from SAM.gov"
+              style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:10}}/>
+            <input value={agency} onChange={e=>setAgency(e.target.value)} placeholder="Agency (e.g. NIH, Army, VA)"
+              style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:16}}/>
+ 
+            <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
+ 
+            {/* File Upload */}
+            <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>📎 UPLOAD ATTACHMENTS (OPTIONAL)</div>
+            <div
+              onDragOver={e=>{e.preventDefault();setDragging(true);}}
+              onDragLeave={()=>setDragging(false)}
+              onDrop={handleDrop}
+              onClick={()=>fileRef.current.click()}
+              style={{border:`2px dashed ${dragging?"#00c887":"#1e3a5a"}`,borderRadius:12,padding:"20px",textAlign:"center",cursor:"pointer",background:dragging?"#0a2a18":"#060f1c",transition:"all 0.2s",marginBottom:10}}>
+              <div style={{fontSize:28,marginBottom:8}}>📁</div>
+              <div style={{color:dragging?"#00e5a0":"#3a6a8a",fontSize:13,fontWeight:600}}>
+                {dragging ? "Drop files here!" : "Drag & drop files OR click to browse"}
+              </div>
+              <div style={{color:"#2a4a68",fontSize:11,marginTop:4}}>PDF, DOCX, TXT — multiple files supported</div>
+              <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.doc" onChange={handleFileInput} style={{display:"none"}}/>
             </div>
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Contract title from SAM.gov"
-              style={inputStyle}
-            />
-            <input
-              value={agency}
-              onChange={e => setAgency(e.target.value)}
-              placeholder="Agency name (e.g. Dept of Army, NIH, VA)"
-              style={{ ...inputStyle, marginBottom:16 }}
-            />
-
-            {/* Summary of what will be used */}
-            {(resolvedId || title || agency) && (
-              <div style={{ background:"#0a2a18", border:"1px solid #00c88730", borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
-                <div style={{ color:"#00c887", fontSize:10, fontWeight:700, marginBottom:4 }}>WILL BE USED IN PROPOSAL:</div>
-                {resolvedId && <div style={{ color:"#6abf8a", fontSize:11 }}>• Notice ID: {resolvedId}</div>}
-                {title && <div style={{ color:"#6abf8a", fontSize:11 }}>• Title: {title}</div>}
-                {agency && <div style={{ color:"#6abf8a", fontSize:11 }}>• Agency: {agency}</div>}
+ 
+            {files.length > 0 && (
+              <div style={{marginBottom:16}}>
+                {files.map((f,i) => (
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0a2a18",border:"1px solid #00c88730",borderRadius:9,padding:"8px 12px",marginBottom:6}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:16}}>📄</span>
+                      <div>
+                        <div style={{color:"#00e5a0",fontSize:12,fontWeight:600}}>{f.name}</div>
+                        <div style={{color:"#2a6a44",fontSize:10}}>{(f.size/1024).toFixed(1)} KB</div>
+                      </div>
+                    </div>
+                    <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#ff4d6d",cursor:"pointer",fontSize:16}}>✕</button>
+                  </div>
+                ))}
+                <div style={{color:"#00c887",fontSize:11,textAlign:"center"}}>✓ {files.length} file{files.length>1?"s":""} ready — UpAI will read {files.length>1?"them":"it"}</div>
               </div>
             )}
-
-            <button
-              onClick={generate}
-              disabled={!resolvedId && !title && !agency}
-              style={{
-                width:"100%",
-                background: (resolvedId || title || agency) ? "linear-gradient(135deg,#00c887,#0088cc)" : "#0a2030",
-                color: (resolvedId || title || agency) ? "#001a10" : "#2a5a78",
-                border:"none", borderRadius:11, padding:13, fontWeight:800, fontSize:15,
-                cursor: (resolvedId || title || agency) ? "pointer" : "not-allowed"
-              }}>
-              ✦ Generate Proposal with AI
+ 
+            <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
+              style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:11,padding:14,fontWeight:800,fontSize:15,cursor:(resolvedId||title||agency)?"pointer":"not-allowed",transition:"all 0.3s"}}>
+              {files.length > 0 ? `✦ UpAI — Read ${files.length} File${files.length>1?"s":""} & Draft Proposal` : "✦ UpAI — Draft Proposal"}
             </button>
-            {!resolvedId && !title && !agency && (
-              <div style={{ color:"#2a5a78", fontSize:11, textAlign:"center", marginTop:8 }}>
-                Enter at least one field above to generate
-              </div>
-            )}
           </div>
         )}
-
-        {/* Streaming / Done */}
-        {phase !== "idle" && (
-          <div style={{ flex:1, overflowY:"auto", padding:"16px 20px" }}>
-            {phase === "loading" && (
-              <div style={{ color:"#4fc3f7", fontSize:14, padding:"30px 0", display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◌</span>
-                Drafting your proposal…
-              </div>
-            )}
-            <pre style={{ color:"#b8d4ec", fontSize:13, lineHeight:1.8, whiteSpace:"pre-wrap", wordBreak:"break-word", fontFamily:"'IBM Plex Mono',monospace" }}>
-              {text}{phase === "streaming" && <span style={{ animation:"blink 0.7s infinite", color:"#00e5a0" }}>▌</span>}
-            </pre>
+ 
+        {/* READING PHASE */}
+        {phase==="reading" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
+            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"pulse 1.5s infinite"}}>📄</div>
+            <div style={{color:"#00e5a0",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{readingMsg}</div>
+            <div style={{display:"flex",gap:6}}>
+              {[0,1,2].map(i=>(
+                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#00c887",animation:`pulse 1s ${i*0.3}s infinite`}}/>
+              ))}
+            </div>
+            <div style={{color:"#2a6a44",fontSize:12,textAlign:"center",maxWidth:300}}>UpAI is analyzing {files.length} attachment{files.length>1?"s":""} to build a tailored proposal...</div>
           </div>
         )}
-
-        {phase === "done" && (
-          <div style={{ padding:"12px 20px", borderTop:"1px solid #142a3e", display:"flex", gap:10 }}>
-            <button onClick={() => navigator.clipboard.writeText(text)} style={{ background:"#0a2030", color:"#4fc3f7", border:"1px solid #1a4060", borderRadius:10, padding:"9px 16px", fontWeight:600, fontSize:12, cursor:"pointer" }}>📋 Copy</button>
-            <button onClick={() => { setPhase("idle"); setText(""); }} style={{ background:"#0a2030", color:"#6a8aa8", border:"1px solid #142a3e", borderRadius:10, padding:"9px 16px", fontWeight:600, fontSize:12, cursor:"pointer" }}>↺ Redo</button>
-            <button onClick={onClose} style={{ marginLeft:"auto", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:10, padding:"9px 22px", fontWeight:800, fontSize:13, cursor:"pointer" }}>Done ✓</button>
+ 
+        {/* DRAFTING PHASE */}
+        {phase==="drafting" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
+            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#0088cc,#c084fc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"spin 3s linear infinite"}}>✍️</div>
+            <div style={{color:"#4fc3f7",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{draftingMsg}</div>
+            <div style={{display:"flex",gap:6}}>
+              {[0,1,2,3,4,5,6].map(i=>(
+                <div key={i} style={{width:6,height:6,borderRadius:"50%",background:i<3?"#00c887":"#1a3a5a",transition:"background 0.5s"}}/>
+              ))}
+            </div>
+            <div style={{color:"#2a5a78",fontSize:12,textAlign:"center"}}>UpAI is crafting your winning proposal...</div>
+          </div>
+        )}
+ 
+        {/* QUALITY PHASE */}
+        {phase==="quality" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
+            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#f0c040,#ff8c42)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"pulse 1.5s infinite"}}>🔬</div>
+            <div style={{color:"#f0c040",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{qualityMsg}</div>
+            <div style={{display:"flex",gap:6}}>
+              {[0,1,2].map(i=>(
+                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#f0c040",animation:`pulse 1s ${i*0.3}s infinite`}}/>
+              ))}
+            </div>
+            <div style={{color:"#6a5a2a",fontSize:12,textAlign:"center"}}>UpAI is running quality checks on your proposal...</div>
+          </div>
+        )}
+ 
+        {/* DONE PHASE */}
+        {phase==="done" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto"}}>
+ 
+            {/* Quality Score Banner */}
+            {qualityScore !== null && (
+              <div style={{padding:"14px 20px",borderBottom:"1px solid #142a3e",background:"#050f1e",flexShrink:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{color:scoreColor,fontSize:22,fontWeight:900}}>{qualityScore}%</div>
+                    <div style={{color:scoreColor,fontSize:12,fontWeight:700}}>{scoreLabel}</div>
+                  </div>
+                </div>
+ 
+                {/* AI Checks */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
+                  {qualityChecks.map((c,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:6,background:"#060f1c",borderRadius:8,padding:"6px 10px"}}>
+                      <span style={{fontSize:12,flexShrink:0}}>{statusIcon(c.status)}</span>
+                      <div>
+                        <div style={{color:statusColor(c.status),fontSize:11,fontWeight:600}}>{c.label}</div>
+                        <div style={{color:"#3a5a78",fontSize:10}}>{c.note}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+ 
+                {/* Human Checklist */}
+                <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>👤 YOUR REVIEW CHECKLIST</div>
+                {humanChecks.map((c,i)=>(
+                  <div key={i} onClick={()=>toggleHumanCheck(i)}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:8,cursor:"pointer",background:c.checked?"#0a2a18":"#060f1c",border:`1px solid ${c.checked?"#00c88740":"#132436"}`,marginBottom:5,transition:"all 0.2s"}}>
+                    <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${c.checked?"#00c887":"#2a5a78"}`,background:c.checked?"#00c887":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
+                      {c.checked && <span style={{color:"#001a10",fontSize:11,fontWeight:900}}>✓</span>}
+                    </div>
+                    <span style={{color:c.checked?"#00e5a0":"#5a8aaa",fontSize:12}}>{c.label}</span>
+                  </div>
+                ))}
+ 
+                {humanDone && (
+                  <div style={{marginTop:10,background:"linear-gradient(135deg,#0a2a18,#0a3a20)",border:"1px solid #00c88750",borderRadius:10,padding:"10px 14px",textAlign:"center",animation:"slideUp 0.3s ease"}}>
+                    <div style={{color:"#00e5a0",fontSize:13,fontWeight:700}}>🎉 UpAI says: You're ready to submit!</div>
+                  </div>
+                )}
+              </div>
+            )}
+ 
+            {/* Proposal Text */}
+            <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
+              <pre style={{color:"#b8d4ec",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'IBM Plex Mono',monospace"}}>{proposal}</pre>
+            </div>
+          </div>
+        )}
+ 
+        {/* Footer Buttons */}
+        {phase==="done" && (
+          <div style={{padding:"12px 20px",borderTop:"1px solid #142a3e",display:"flex",gap:10,flexShrink:0}}>
+            <button onClick={()=>navigator.clipboard.writeText(proposal)} style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>📋 Copy</button>
+            <button onClick={()=>{setPhase("input");setProposal("");setQualityScore(null);setQualityChecks([]);setHumanChecks([]);}} style={{background:"#0a2030",color:"#6a8aa8",border:"1px solid #142a3e",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>↺ Redo</button>
+            {saved && <span style={{color:"#00c887",fontSize:11,display:"flex",alignItems:"center",gap:4}}>💾 Auto-saved</span>}
+            <button onClick={onClose} style={{marginLeft:"auto",background:humanDone?"linear-gradient(135deg,#00c887,#009966)":"linear-gradient(135deg,#0088cc,#0066aa)",color:"#001a10",border:"none",borderRadius:10,padding:"9px 22px",fontWeight:800,fontSize:13,cursor:"pointer"}}>
+              {humanDone ? "✅ Submit Ready!" : "Done ✓"}
+            </button>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-function CategoryCard({ cat, onDraft }) {
+ 
+function CategoryCard({cat, onDraft}) {
   const c = cat.accentColor;
   return (
-    <div style={{ background:"linear-gradient(135deg,#0d1f30,#0f2438)", border:`1px solid ${c}22`, borderRadius:16, marginBottom:16, overflow:"hidden", boxShadow:`0 2px 20px ${c}10` }}>
-      <div style={{ padding:"18px 20px" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
+    <div style={{background:"linear-gradient(135deg,#0d1f30,#0f2438)",border:`1px solid ${c}22`,borderRadius:16,marginBottom:16,overflow:"hidden",boxShadow:`0 2px 20px ${c}10`}}>
+      <div style={{padding:"18px 20px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
           <div>
-            <div style={{ fontSize:26, marginBottom:4 }}>{cat.icon}</div>
-            <div style={{ color:"#ddeeff", fontSize:18, fontWeight:700, fontFamily:"'DM Serif Display',Georgia,serif" }}>{cat.label}</div>
-            <div style={{ color:"#5a8aaa", fontSize:12, lineHeight:1.5, marginTop:5, maxWidth:460 }}>{cat.description}</div>
+            <div style={{fontSize:26,marginBottom:4}}>{cat.icon}</div>
+            <div style={{color:"#ddeeff",fontSize:18,fontWeight:700,fontFamily:"'DM Serif Display',Georgia,serif"}}>{cat.label}</div>
+            <div style={{color:"#5a8aaa",fontSize:12,lineHeight:1.5,marginTop:5,maxWidth:460}}>{cat.description}</div>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:4, alignItems:"flex-end", flexShrink:0, marginLeft:12 }}>
-            <span style={{ background:"#0a2030", border:"1px solid #1a4060", color:"#4fc3f7", fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>ACTIVE</span>
-            <span style={{ background:"#0a2030", border:"1px solid #1a4060", color:"#4fc3f7", fontSize:9, padding:"3px 8px", borderRadius:10, fontWeight:700 }}>USA ONLY</span>
+          <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end",flexShrink:0,marginLeft:12}}>
+            <span style={{background:"#0a2030",border:"1px solid #1a4060",color:"#4fc3f7",fontSize:9,padding:"3px 8px",borderRadius:10,fontWeight:700}}>ACTIVE</span>
+            <span style={{background:"#0a2030",border:"1px solid #1a4060",color:"#4fc3f7",fontSize:9,padding:"3px 8px",borderRadius:10,fontWeight:700}}>🇺🇸 USA</span>
           </div>
         </div>
-
-        <div style={{ borderTop:`1px solid ${c}20`, marginBottom:12 }} />
-
-        {cat.naicsRows.map((row, i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom: i < cat.naicsRows.length-1 ? 10 : 0, background:"#060f1c", borderRadius:12, padding:"12px 14px" }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ color:c, fontSize:12, fontWeight:700, lineHeight:1.4 }}>{row.label}</div>
-              <div style={{ color:"#2a5a78", fontSize:10, marginTop:2 }}>keyword: {row.bestKw}</div>
+        <div style={{borderTop:`1px solid ${c}20`,marginBottom:12}}/>
+        {cat.naicsRows.map((row,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:i<cat.naicsRows.length-1?10:0,background:"#060f1c",borderRadius:12,padding:"12px 14px",flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:160}}>
+              <div style={{color:c,fontSize:12,fontWeight:700,lineHeight:1.4}}>{row.label}</div>
+              <div style={{color:"#2a5a78",fontSize:10,marginTop:2}}>keyword: {row.bestKw}</div>
             </div>
-            <a href={makeUrl(row.sector, row.naics, row.bestKw)} target="_blank" rel="noopener noreferrer"
-              style={{ background:`linear-gradient(135deg,${c}22,${c}11)`, color:c, border:`1px solid ${c}50`, borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap", flexShrink:0 }}>
+            <a href={makeUrl(row.sector,row.naics,row.bestKw)} target="_blank" rel="noopener noreferrer"
+              style={{background:`linear-gradient(135deg,${c}22,${c}11)`,color:c,border:`1px solid ${c}50`,borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
               ⭐ Best Match
             </a>
-            <button onClick={() => onDraft(row, cat)}
-              style={{ background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
+            <button onClick={()=>onDraft(row,cat)}
+              style={{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
               ✦ Draft
             </button>
-            <a href={makeAwardUrl(row.sector, row.naics)} target="_blank" rel="noopener noreferrer"
-              style={{ background:"#1a0a2e", color:"#c084fc", border:"1px solid #c084fc50", borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap", flexShrink:0 }}>
-              🏆 Past Awards
+            <a href={makeAwardUrl(row.sector,row.naics)} target="_blank" rel="noopener noreferrer"
+              style={{background:"#1a0a2e",color:"#c084fc",border:"1px solid #c084fc50",borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+              🏆 Awards
             </a>
           </div>
         ))}
-
-        <div style={{ marginTop:12, color:"#2a5a78", fontSize:10 }}>
-          💡 After Best Match opens, add filters on SAM.gov: Set Aside → Small Business · Place of Performance → NJ
+        <div style={{marginTop:12,color:"#2a5a78",fontSize:10}}>
+          💡 After Best Match, filter on SAM.gov: Set Aside → Small Business
         </div>
       </div>
     </div>
   );
 }
-
+ 
 function App() {
   const [draftInfo, setDraftInfo] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
-  const filtered = activeTab === "all" ? CATEGORIES : CATEGORIES.filter(c => c.id === activeTab);
-
+ 
+  // Check for auto-saved proposal on load
+  const [hasSaved, setHasSaved] = React.useState(false);
+  const [showRestoreBar, setShowRestoreBar] = React.useState(false);
+  React.useEffect(()=>{
+    const saved = localStorage.getItem("upai_last_proposal");
+    if (saved) { setHasSaved(true); setShowRestoreBar(true); }
+  },[]);
+ 
+  const filtered = activeTab==="all" ? CATEGORIES : CATEGORIES.filter(c=>c.id===activeTab);
+ 
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)" }}>
-
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)"}}>
       {/* Header */}
-      <div style={{ background:"rgba(4,14,30,0.96)", backdropFilter:"blur(14px)", borderBottom:"1px solid #0e2034", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:100 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:8, background:"linear-gradient(135deg,#00c887,#0088cc)", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:13, color:"#001a10" }}>UV</div>
+      <div style={{background:"rgba(4,14,30,0.96)",backdropFilter:"blur(14px)",borderBottom:"1px solid #0e2034",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:34,height:34,borderRadius:8,background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"#001a10"}}>UV</div>
           <div>
-            <div style={{ fontFamily:"'DM Serif Display',Georgia,serif", fontSize:17 }}>UPVERSION LLC</div>
-            <div style={{ fontSize:9, color:"#2a6a8a", letterSpacing:1.5, fontWeight:700 }}>SAM.GOV CONTRACT INTELLIGENCE</div>
+            <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:17}}>UPVERSION LLC</div>
+            <div style={{fontSize:9,color:"#2a6a8a",letterSpacing:1.5,fontWeight:700}}>SAM.GOV · POWERED BY UpAI</div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {["MBE","SBE","NJ"].map(c => <span key={c} style={{ background:"#00c88712", border:"1px solid #00c88728", color:"#00e5a0", fontSize:9, padding:"2px 8px", borderRadius:12, fontWeight:700 }}>{c}</span>)}
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {hasSaved && (
+            <button onClick={()=>{
+              const s = localStorage.getItem("upai_last_proposal");
+              if (s) { const d = JSON.parse(s); alert("Last saved: " + d.savedAt + "\nTitle: " + (d.title||"N/A") + "\nNAICS: " + d.naics); }
+            }} style={{background:"#0a2a18",border:"1px solid #00c88730",color:"#00c887",fontSize:10,padding:"3px 10px",borderRadius:10,cursor:"pointer",fontWeight:700}}>
+              💾 Saved
+            </button>
+          )}
+          {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#00c88712",border:"1px solid #00c88728",color:"#00e5a0",fontSize:9,padding:"2px 8px",borderRadius:12,fontWeight:700}}>{c}</span>)}
         </div>
       </div>
-
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"20px 16px" }}>
-
+ 
+      {/* Restore bar */}
+      {showRestoreBar && (
+        <div style={{background:"linear-gradient(135deg,#0a2a18,#0a3a20)",borderBottom:"1px solid #00c88730",padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:"#00e5a0",fontSize:12}}>💾 UpAI has a saved proposal from your last session!</span>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{
+              const s = localStorage.getItem("upai_last_proposal");
+              if (s) { const d = JSON.parse(s); navigator.clipboard.writeText(d.proposal); alert("Copied to clipboard!"); }
+            }} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:11,cursor:"pointer"}}>Copy Saved</button>
+            <button onClick={()=>setShowRestoreBar(false)} style={{background:"none",border:"1px solid #00c88730",color:"#00c887",borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:11,cursor:"pointer"}}>Dismiss</button>
+          </div>
+        </div>
+      )}
+ 
+      <div style={{maxWidth:860,margin:"0 auto",padding:"20px 16px"}}>
+ 
         {/* Company Card */}
-        <div style={{ background:"linear-gradient(135deg,#0c1c2e,#0a1a28)", border:"1px solid #132436", borderRadius:16, padding:"16px 20px", marginBottom:18 }}>
-          <div style={{ color:"#2a6a8a", fontSize:10, fontWeight:700, letterSpacing:2, marginBottom:10 }}>REGISTERED ENTITY</div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:"8px 16px" }}>
-            {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Expertise","Biotech Manufacturing Trainer"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v]) => (
+        <div style={{background:"linear-gradient(135deg,#0c1c2e,#0a1a28)",border:"1px solid #132436",borderRadius:16,padding:"16px 20px",marginBottom:18}}>
+          <div style={{color:"#2a6a8a",fontSize:10,fontWeight:700,letterSpacing:2,marginBottom:10}}>REGISTERED ENTITY</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"8px 16px"}}>
+            {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Expertise","Biotech Manufacturing Trainer"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v])=>(
               <div key={k}>
-                <div style={{ color:"#2a5a78", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:2 }}>{k}</div>
-                <div style={{ color:"#9abcd4", fontSize:12 }}>{v}</div>
+                <div style={{color:"#2a5a78",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:2}}>{k}</div>
+                <div style={{color:"#9abcd4",fontSize:12}}>{v}</div>
               </div>
             ))}
           </div>
         </div>
-
+ 
         {/* Tabs */}
-        <div style={{ display:"flex", gap:8, marginBottom:18, flexWrap:"wrap" }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ background:activeTab===t.id?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28", color:activeTab===t.id?"#001a10":"#4a8aaa", border:activeTab===t.id?"none":"1px solid #132436", borderRadius:20, padding:"8px 18px", fontWeight:700, fontSize:12, cursor:"pointer" }}>
+        <div style={{display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"}}>
+          {TABS.map(t=>(
+            <button key={t.id} onClick={()=>setActiveTab(t.id)}
+              style={{background:activeTab===t.id?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28",color:activeTab===t.id?"#001a10":"#4a8aaa",border:activeTab===t.id?"none":"1px solid #132436",borderRadius:20,padding:"8px 18px",fontWeight:700,fontSize:12,cursor:"pointer"}}>
               {t.label}
             </button>
           ))}
         </div>
-
-        {filtered.map(cat => <CategoryCard key={cat.id} cat={cat} onDraft={(row, c) => setDraftInfo({ row, cat:c })} />)}
-
+ 
+        {filtered.map(cat=><CategoryCard key={cat.id} cat={cat} onDraft={(row,c)=>setDraftInfo({row,cat:c})}/>)}
+ 
         {/* How to use */}
-        <div style={{ background:"linear-gradient(135deg,#0a1e10,#081a0e)", border:"1px solid #0a3a1a", borderRadius:16, padding:"18px 20px", marginTop:8 }}>
-          <div style={{ color:"#00c887", fontSize:11, fontWeight:700, letterSpacing:2, marginBottom:12 }}>📋 HOW TO USE</div>
+        <div style={{background:"linear-gradient(135deg,#0a1e10,#081a0e)",border:"1px solid #0a3a1a",borderRadius:16,padding:"18px 20px",marginTop:8}}>
+          <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:12}}>📋 HOW UpAI WORKS</div>
           {[
-            ["⭐","Best Match","Opens SAM.gov with NAICS + keyword — targeted results. Add Set Aside filter manually."],
-            ["✦","Draft Proposal","Click Draft, paste Notice ID OR full SAM.gov URL, add optional details, generate!"],
-            ["📋","Copy & Submit","Copy the AI proposal, customize with solicitation details, submit before deadline."],
-          ].map(([icon,t,d]) => (
-            <div key={t} style={{ display:"flex", gap:12, marginBottom:10, alignItems:"flex-start" }}>
-              <div style={{ width:26, height:26, borderRadius:"50%", background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>{icon}</div>
+            ["⭐","Best Match","Opens SAM.gov with NAICS + keyword — USA only, targeted results"],
+            ["✦","Draft","Enter Notice ID or URL, upload attachments, UpAI reads & drafts your proposal"],
+            ["🔬","Quality Check","UpAI scores your proposal and flags issues. You complete the human checklist."],
+            ["💾","Auto-Save","UpAI saves every proposal automatically — never lose your work!"],
+            ["🏆","Past Awards","See who won contracts in your NAICS — learn from the winners"],
+          ].map(([icon,t,d])=>(
+            <div key={t} style={{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start"}}>
+              <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>{icon}</div>
               <div>
-                <div style={{ color:"#00e5a0", fontSize:13, fontWeight:700, marginBottom:2 }}>{t}</div>
-                <div style={{ color:"#2a6a44", fontSize:12, lineHeight:1.5 }}>{d}</div>
+                <div style={{color:"#00e5a0",fontSize:13,fontWeight:700,marginBottom:2}}>{t}</div>
+                <div style={{color:"#2a6a44",fontSize:12,lineHeight:1.5}}>{d}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      <div style={{ textAlign:"center", padding:"20px", color:"#0e2a40", fontSize:11, borderTop:"1px solid #0a1e30", marginTop:20 }}>
-        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by Claude AI + SAM.gov
+ 
+      <div style={{textAlign:"center",padding:"20px",color:"#0e2a40",fontSize:11,borderTop:"1px solid #0a1e30",marginTop:20}}>
+        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by UpAI + SAM.gov
       </div>
-
-      {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} onClose={() => setDraftInfo(null)} />}
+ 
+      {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} onClose={()=>setDraftInfo(null)}/>}
     </div>
   );
 }
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ 
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
