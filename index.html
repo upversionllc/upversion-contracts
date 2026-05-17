@@ -129,21 +129,22 @@ function useRotatingMsg(msgs, active, interval) {
   return msgs[idx];
 }
 
-function ProposalModal({ row, cat, onClose }) {
-  const [phase, setPhase] = React.useState("input");
-  const [noticeId, setNoticeId] = React.useState("");
+function ProposalModal({ row, cat, savedData, onClose }) {
+  const [phase, setPhase] = React.useState(savedData ? "done" : "input");
+  const [noticeId, setNoticeId] = React.useState(savedData?.noticeId || "");
   const [samUrl, setSamUrl] = React.useState("");
-  const [title, setTitle] = React.useState("");
-  const [agency, setAgency] = React.useState("");
+  const [title, setTitle] = React.useState(savedData?.title || "");
+  const [agency, setAgency] = React.useState(savedData?.agency || "");
   const [files, setFiles] = React.useState([]);
   const [dragging, setDragging] = React.useState(false);
   const [showUpload, setShowUpload] = React.useState(false);
   const [readPage, setReadPage] = React.useState(true);
-  const [proposal, setProposal] = React.useState("");
-  const [qualityScore, setQualityScore] = React.useState(null);
-  const [qualityChecks, setQualityChecks] = React.useState([]);
-  const [humanChecks, setHumanChecks] = React.useState([]);
-  const [saved, setSaved] = React.useState(false);
+  const [proposal, setProposal] = React.useState(savedData?.proposal || "");
+  const [qualityScore, setQualityScore] = React.useState(savedData?.qualityScore || null);
+  const [qualityChecks, setQualityChecks] = React.useState(savedData?.qualityChecks || []);
+  const [humanChecks, setHumanChecks] = React.useState(savedData?.humanChecks || []);
+  const [saved, setSaved] = React.useState(!!savedData);
+  const [showQuality, setShowQuality] = React.useState(!!savedData);
   const fileRef = React.useRef();
 
   const pageMsg = useRotatingMsg(PAGE_MSGS, phase==="readingPage");
@@ -194,7 +195,11 @@ function ProposalModal({ row, cat, onClose }) {
       const data = await res.json();
       const full = (data.content && data.content.map(c=>c.text||"").join("\n")) || "Error generating proposal.";
       setProposal(full);
-      try { localStorage.setItem("upai_last_proposal", JSON.stringify({proposal:full,noticeId:resolvedId,title,agency,naics:row.naics,savedAt:new Date().toISOString(),cat:cat.label})); setSaved(true); } catch(e) {}
+      try {
+        const saveData = {proposal:full,noticeId:resolvedId,title,agency,naics:row.naics,savedAt:new Date().toISOString(),cat:cat.label};
+        localStorage.setItem("upai_last_proposal", JSON.stringify(saveData));
+        setSaved(true);
+      } catch(e) {}
       setPhase("quality");
       await new Promise(r => setTimeout(r, 2000));
       const qp = 'Review this proposal, return ONLY valid JSON: {"score":<0-100>,"checks":[{"label":"Executive Summary","status":"pass|warn|fail","note":"brief"},{"label":"Certifications","status":"pass|warn|fail","note":"brief"},{"label":"Technical Approach","status":"pass|warn|fail","note":"brief"},{"label":"Past Performance","status":"pass|warn|fail","note":"brief"},{"label":"Key Personnel","status":"pass|warn|fail","note":"brief"},{"label":"Differentiators","status":"pass|warn|fail","note":"brief"},{"label":"Call to Action","status":"pass|warn|fail","note":"brief"},{"label":"Compliance Tone","status":"pass|warn|fail","note":"brief"}]}\nPROPOSAL:\n' + full.slice(0,3000);
@@ -213,6 +218,20 @@ function ProposalModal({ row, cat, onClose }) {
           {label:"Ready to submit",checked:false},
         ]);
       } catch(e) { setQualityScore(75); setQualityChecks([]); }
+      // Update saved data with quality results
+      try {
+        const existing = JSON.parse(localStorage.getItem("upai_last_proposal") || "{}");
+        existing.qualityScore = parsed ? parsed.score : 75;
+        existing.qualityChecks = parsed ? (parsed.checks || []) : [];
+        existing.humanChecks = [
+          {label:"Past performance examples are accurate",checked:false},
+          {label:"All requirements are addressed",checked:false},
+          {label:"Pricing/cost is realistic",checked:false},
+          {label:"Someone else has reviewed this",checked:false},
+          {label:"Ready to submit",checked:false},
+        ];
+        localStorage.setItem("upai_last_proposal", JSON.stringify(existing));
+      } catch(e2) {}
       setPhase("done");
     } catch(e) { setProposal("Error: "+e.message); setPhase("done"); }
   }
@@ -326,54 +345,47 @@ function ProposalModal({ row, cat, onClose }) {
 
         {phase==="done" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            {qualityScore!==null && (() => {
-              const [showQuality, setShowQuality] = React.useState(false);
-              return (
-                <div style={{borderBottom:"1px solid #1a3a5a",background:"#0a1628",flexShrink:0}}>
-                  {/* Compact header — always visible */}
-                  <div onClick={()=>setShowQuality(!showQuality)}
-                    style={{padding:"8px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</span>
-                      <span style={{color:scoreColor,fontSize:16,fontWeight:900}}>{qualityScore}%</span>
-                      <span style={{background:scoreColor,color:"#001a10",fontSize:10,padding:"1px 8px",borderRadius:20,fontWeight:700}}>{qualityScore>=80?"Strong":qualityScore>=60?"Good":"Needs Work"}</span>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{color:"#00c887",fontSize:10,fontWeight:700}}>
-                        {humanChecks.filter(c=>c.checked).length}/{humanChecks.length} reviewed
-                      </span>
-                      <span style={{color:"#4a6a8a",fontSize:12}}>{showQuality?"▲":"▼"} {showQuality?"Hide":"Show"}</span>
-                    </div>
+            {qualityScore!==null && (
+              <div style={{borderBottom:"1px solid #1a3a5a",background:"#0a1628",flexShrink:0}}>
+                <div onClick={()=>setShowQuality(!showQuality)}
+                  style={{padding:"8px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</span>
+                    <span style={{color:scoreColor,fontSize:16,fontWeight:900}}>{qualityScore}%</span>
+                    <span style={{background:scoreColor,color:"#001a10",fontSize:10,padding:"1px 8px",borderRadius:20,fontWeight:700}}>{qualityScore>=80?"Strong":qualityScore>=60?"Good":"Needs Work"}</span>
                   </div>
-                  {/* Expandable details */}
-                  {showQuality && (
-                    <div style={{padding:"0 20px 12px"}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:10}}>
-                        {qualityChecks.map((c,i)=>(
-                          <div key={i} style={{display:"flex",gap:6,background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:"4px 8px"}}>
-                            <span style={{fontSize:11}}>{statusIcon(c.status)}</span>
-                            <div>
-                              <div style={{color:"#ddeeff",fontSize:10,fontWeight:600}}>{c.label}</div>
-                              <div style={{color:"#4a6a8a",fontSize:9}}>{c.note}</div>
-                            </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{color:"#00c887",fontSize:10,fontWeight:700}}>{humanChecks.filter(c=>c.checked).length}/{humanChecks.length} reviewed</span>
+                    <span style={{color:"#4a6a8a",fontSize:12}}>{showQuality?"▲ Hide":"▼ Show"}</span>
+                  </div>
+                </div>
+                {showQuality && (
+                  <div style={{padding:"0 20px 12px"}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:10}}>
+                      {qualityChecks.map((c,i)=>(
+                        <div key={i} style={{display:"flex",gap:6,background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:"4px 8px"}}>
+                          <span style={{fontSize:11}}>{statusIcon(c.status)}</span>
+                          <div>
+                            <div style={{color:"#ddeeff",fontSize:10,fontWeight:600}}>{c.label}</div>
+                            <div style={{color:"#4a6a8a",fontSize:9}}>{c.note}</div>
                           </div>
-                        ))}
-                      </div>
-                      <div style={{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:6}}>YOUR REVIEW CHECKLIST</div>
-                      {humanChecks.map((c,i)=>(
-                        <div key={i} onClick={()=>toggleHumanCheck(i)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",cursor:"pointer",background:c.checked?"#0a2a18":"transparent",border:"1px solid "+(c.checked?"#00c88740":"#1a3a5a"),borderRadius:6,marginBottom:4}}>
-                          <div style={{width:15,height:15,border:"2px solid "+(c.checked?"#00c887":"#3a6a8a"),background:c.checked?"#00c887":"transparent",borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            {c.checked && <span style={{color:"#001a10",fontSize:9,fontWeight:900}}>v</span>}
-                          </div>
-                          <span style={{color:c.checked?"#00e5a0":"#8aaabb",fontSize:12}}>{c.label}</span>
                         </div>
                       ))}
-                      {humanDone && <div style={{marginTop:8,background:"#0a2a18",border:"1px solid #00c88750",borderRadius:8,padding:"8px",textAlign:"center",color:"#00e5a0",fontSize:13,fontWeight:700}}>Ready to submit!</div>}
                     </div>
-                  )}
-                </div>
-              );
-            })()}
+                    <div style={{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:6}}>YOUR REVIEW CHECKLIST</div>
+                    {humanChecks.map((c,i)=>(
+                      <div key={i} onClick={()=>toggleHumanCheck(i)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",cursor:"pointer",background:c.checked?"#0a2a18":"transparent",border:"1px solid "+(c.checked?"#00c88740":"#1a3a5a"),borderRadius:6,marginBottom:4}}>
+                        <div style={{width:15,height:15,border:"2px solid "+(c.checked?"#00c887":"#3a6a8a"),background:c.checked?"#00c887":"transparent",borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          {c.checked && <span style={{color:"#001a10",fontSize:9,fontWeight:900}}>v</span>}
+                        </div>
+                        <span style={{color:c.checked?"#00e5a0":"#8aaabb",fontSize:12}}>{c.label}</span>
+                      </div>
+                    ))}
+                    {humanDone && <div style={{marginTop:8,background:"#0a2a18",border:"1px solid #00c88750",borderRadius:8,padding:"8px",textAlign:"center",color:"#00e5a0",fontSize:13,fontWeight:700}}>Ready to submit!</div>}
+                  </div>
+                )}
+              </div>
+            )}
             <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
               <pre style={{color:"#b8d4ec",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Source Sans 3',sans-serif"}}>{proposal}</pre>
             </div>
@@ -438,7 +450,28 @@ function App() {
   const [draftInfo, setDraftInfo] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
   const [showRestoreBar, setShowRestoreBar] = React.useState(false);
-  React.useEffect(()=>{ if (localStorage.getItem("upai_last_proposal")) setShowRestoreBar(true); },[]);
+  const [savedProposal, setSavedProposal] = React.useState(null);
+
+  React.useEffect(()=>{
+    const s = localStorage.getItem("upai_last_proposal");
+    if (s) { setShowRestoreBar(true); setSavedProposal(JSON.parse(s)); }
+  },[]);
+
+  function openSavedProposal() {
+    const s = localStorage.getItem("upai_last_proposal");
+    if (!s) return;
+    const data = JSON.parse(s);
+    // Find matching category and row
+    let foundCat = CATEGORIES[0];
+    let foundRow = CATEGORIES[0].naicsRows[0];
+    for (const cat of CATEGORIES) {
+      for (const row of cat.naicsRows) {
+        if (row.naics === data.naics) { foundCat = cat; foundRow = row; break; }
+      }
+    }
+    setDraftInfo({ row: foundRow, cat: foundCat, savedData: data });
+  }
+
   const filtered = activeTab==="all" ? CATEGORIES : CATEGORIES.filter(c=>c.id===activeTab);
 
   return (
@@ -455,7 +488,7 @@ function App() {
           </div>
           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:160}}>
             {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#ffffff18",color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:20,fontWeight:700,border:"1px solid #ffffff30"}}>{c}</span>)}
-            {showRestoreBar && <button onClick={()=>{const s=localStorage.getItem("upai_last_proposal");if(s){navigator.clipboard.writeText(JSON.parse(s).proposal);alert("Copied!");}}} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:4,padding:"3px 8px",fontWeight:700,fontSize:10,cursor:"pointer"}}>Saved</button>}
+            {showRestoreBar && <button onClick={openSavedProposal} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:4,padding:"3px 8px",fontWeight:700,fontSize:10,cursor:"pointer"}}>💾 Saved</button>}
           </div>
         </div>
       </div>
@@ -503,7 +536,7 @@ function App() {
         UPVERSION LLC - UEI Q1KPWH41NC57 - Piscataway, NJ - Powered by UpAI + SAM.gov
       </div>
 
-      {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} onClose={()=>setDraftInfo(null)}/>}
+      {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} savedData={draftInfo.savedData} onClose={()=>setDraftInfo(null)}/>}
     </div>
   );
 }
