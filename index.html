@@ -35,8 +35,8 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  // USASpending.gov - public, no login required, shows past award winners
-  return "https://www.usaspending.gov/search/?object_class=&award_type_codes=%5B%22A%22%2C%22B%22%2C%22C%22%2C%22D%22%5D&naics_codes=%5B%22" + code + "%22%5D";
+  // SAM.gov Awards - requires login but stays on familiar platform
+  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + USA;
 }
 
 function extractNoticeId(url) {
@@ -379,7 +379,7 @@ function CategoryCard({cat, onDraft}) {
             </div>
           </div>
         ))}
-        <div style={{color:"#2a4a68",fontSize:11,marginTop:6}}>Tip: On SAM.gov add Set Aside - Small Business filter</div>
+        <div style={{color:"#2a4a68",fontSize:11,marginTop:6}}>Tip: Contracts/Draft = no login needed | Winners = SAM.gov login required</div>
       </div>
     </div>
   );
