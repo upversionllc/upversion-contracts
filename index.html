@@ -135,7 +135,7 @@ Use formal government proposal tone. Reference the Notice ID and agency where ap
         body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
-      const full = data.content?.map(c => c.text || "").join("\n") || "Error generating proposal.";
+      const full = (data.content && data.content.map(c => c.text || "").join("\n")) || (data.error ? "API Error: " + data.error : "Error generating proposal.");
       setPhase("streaming");
       let i = 0;
       const iv = setInterval(() => {
