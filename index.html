@@ -35,8 +35,16 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  // SAM.gov Awards - Inactive only, NO USA filter (USA blocks award results)
-  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
+  // Dynamic 36-month date range from today
+  const today = new Date();
+  const past = new Date();
+  past.setMonth(today.getMonth() - 36);
+  function fmt(d) {
+    return (d.getMonth()+1).toString().padStart(2,"0") + "/" + d.getDate().toString().padStart(2,"0") + "/" + d.getFullYear();
+  }
+  const dateFrom = encodeURIComponent(fmt(past));
+  const dateTo = encodeURIComponent(fmt(today));
+  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + "&sfm%5Bdates%5D%5BsignedDate%5D%5Bfrom%5D=" + dateFrom + "&sfm%5Bdates%5D%5BsignedDate%5D%5Bto%5D=" + dateTo;
 }
 
 function extractNoticeId(url) {
