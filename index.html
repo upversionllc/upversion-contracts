@@ -35,7 +35,8 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + USA;
+  // USASpending.gov - public, no login required, shows past award winners
+  return "https://www.usaspending.gov/search/?object_class=&award_type_codes=%5B%22A%22%2C%22B%22%2C%22C%22%2C%22D%22%5D&naics_codes=%5B%22" + code + "%22%5D";
 }
 
 function extractNoticeId(url) {
