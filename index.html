@@ -158,6 +158,7 @@ function ProposalModal({ row, cat, onClose }) {
   const [humanChecks, setHumanChecks] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
   const [showUpload, setShowUpload] = React.useState(false);
+  const [readPage, setReadPage] = React.useState(true);
   const fileRef = React.useRef();
  
   // Saved to localStorage
@@ -215,6 +216,7 @@ CONTRACT OPPORTUNITY:
 - Notice ID: ${resolvedId || "See solicitation"}
 - Title: ${title || "See solicitation"}
 - Agency: ${agency || "Federal Agency"}
+- SAM.gov Page Read: ${readPage && samUrl ? "Yes — UpAI was instructed to use all details from the contract URL" : "No"}
 ${attachmentContext ? `\nATTACHMENT CONTENTS (use these to tailor the proposal):\n${attachmentContext}` : ""}
  
 Write a compelling, tailored government proposal:
@@ -240,12 +242,16 @@ Formal government tone. Be specific, reference attachment details where availabl
  
       // Auto-save
       try {
-        localStorage.setItem("upai_last_proposal", JSON.stringify({
+        const saveData = {
           proposal: full, noticeId: resolvedId, title, agency, naics: row.naics,
           savedAt: new Date().toISOString(), cat: cat.label
-        }));
+        };
+        localStorage.setItem("upai_last_proposal", JSON.stringify(saveData));
         setSaved(true);
-      } catch(e) {}
+        console.log("UpAI Auto-saved proposal to browser storage");
+      } catch(e) {
+        console.log("Auto-save failed:", e.message);
+      }
  
       // Phase: quality check
       setPhase("quality");
@@ -332,7 +338,15 @@ ${full.slice(0, 3000)}`;
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {saved && <span style={{color:"#00c887",fontSize:11,fontWeight:700}}>💾 Auto-saved</span>}
+            {saved && (
+            <div style={{background:"#0a2a18",border:"1px solid #00c88730",borderRadius:10,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
+              <span style={{fontSize:12}}>💾</span>
+              <div>
+                <div style={{color:"#00e5a0",fontSize:10,fontWeight:700}}>Auto-saved!</div>
+                <div style={{color:"#2a6a44",fontSize:9}}>Stored in your browser</div>
+              </div>
+            </div>
+          )}
             <button onClick={onClose} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:20,cursor:"pointer"}}>✕</button>
           </div>
         </div>
@@ -362,6 +376,18 @@ ${full.slice(0, 3000)}`;
               <input value={samUrl} onChange={e=>setSamUrl(e.target.value)} placeholder="https://sam.gov/opp/.../view"
                 style={{width:"100%",background:"#0a1628",border:samUrl?"1px solid #4fc3f760":"1px solid #1e3a5a",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",fontFamily:"'IBM Plex Mono',monospace"}}/>
               {samUrl && detectedId && <div style={{color:"#00c887",fontSize:10,marginTop:5}}>✓ Notice ID detected: {detectedId}</div>}
+              {samUrl && (
+                <div onClick={()=>setReadPage(!readPage)}
+                  style={{display:"flex",alignItems:"center",gap:8,marginTop:10,cursor:"pointer",padding:"8px 10px",background:readPage?"#0a2a18":"#0a1628",borderRadius:9,border:`1px solid ${readPage?"#00c88750":"#1e3a5a"}`,transition:"all 0.2s"}}>
+                  <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${readPage?"#00c887":"#2a5a78"}`,background:readPage?"#00c887":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
+                    {readPage && <span style={{color:"#001a10",fontSize:11,fontWeight:900}}>✓</span>}
+                  </div>
+                  <div>
+                    <div style={{color:readPage?"#00e5a0":"#4fc3f7",fontSize:12,fontWeight:700}}>🌐 Let UpAI read the contract page first</div>
+                    <div style={{color:"#2a5a78",fontSize:10}}>UpAI will scan the SAM.gov page for details before drafting</div>
+                  </div>
+                </div>
+              )}
             </div>
  
             <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
@@ -570,23 +596,25 @@ function CategoryCard({cat, onDraft}) {
         </div>
         <div style={{borderTop:`1px solid ${c}20`,marginBottom:12}}/>
         {cat.naicsRows.map((row,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:i<cat.naicsRows.length-1?10:0,background:"#060f1c",borderRadius:12,padding:"12px 14px",flexWrap:"wrap"}}>
-            <div style={{flex:1,minWidth:160}}>
+          <div key={i} style={{marginBottom:i<cat.naicsRows.length-1?10:0,background:"#060f1c",borderRadius:12,padding:"12px 14px"}}>
+            <div style={{marginBottom:10}}>
               <div style={{color:c,fontSize:12,fontWeight:700,lineHeight:1.4}}>{row.label}</div>
               <div style={{color:"#2a5a78",fontSize:10,marginTop:2}}>keyword: {row.bestKw}</div>
             </div>
-            <a href={makeUrl(row.sector,row.naics,row.bestKw)} target="_blank" rel="noopener noreferrer"
-              style={{background:`linear-gradient(135deg,${c}22,${c}11)`,color:c,border:`1px solid ${c}50`,borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
-              ⭐ Best Match
-            </a>
-            <button onClick={()=>onDraft(row,cat)}
-              style={{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-              ✦ Draft
-            </button>
-            <a href={makeAwardUrl(row.sector,row.naics)} target="_blank" rel="noopener noreferrer"
-              style={{background:"#1a0a2e",color:"#c084fc",border:"1px solid #c084fc50",borderRadius:10,padding:"8px 12px",fontSize:11,fontWeight:700,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
-              🏆 Awards
-            </a>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <a href={makeUrl(row.sector,row.naics,row.bestKw)} target="_blank" rel="noopener noreferrer"
+                style={{flex:1,minWidth:100,background:`linear-gradient(135deg,${c}22,${c}11)`,color:c,border:`1px solid ${c}50`,borderRadius:10,padding:"9px 8px",fontSize:11,fontWeight:700,textDecoration:"none",textAlign:"center"}}>
+                ⭐ Best Match
+              </a>
+              <button onClick={()=>onDraft(row,cat)}
+                style={{flex:1,minWidth:80,background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:10,padding:"9px 8px",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center"}}>
+                ✦ Draft
+              </button>
+              <a href={makeAwardUrl(row.sector,row.naics)} target="_blank" rel="noopener noreferrer"
+                style={{flex:1,minWidth:80,background:"#1a0a2e",color:"#c084fc",border:"1px solid #c084fc50",borderRadius:10,padding:"9px 8px",fontSize:11,fontWeight:700,textDecoration:"none",textAlign:"center"}}>
+                🏆 Awards
+              </a>
+            </div>
           </div>
         ))}
         <div style={{marginTop:12,color:"#2a5a78",fontSize:10}}>
