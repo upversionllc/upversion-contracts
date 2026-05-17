@@ -326,38 +326,54 @@ function ProposalModal({ row, cat, onClose }) {
 
         {phase==="done" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            {qualityScore!==null && (
-              <div style={{padding:"12px 20px",borderBottom:"1px solid #1a3a5a",background:"#0a1628",flexShrink:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</div>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <span style={{color:scoreColor,fontSize:22,fontWeight:900}}>{qualityScore}%</span>
-                    <span style={{background:scoreColor,color:"#001a10",fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700}}>{qualityScore>=80?"Strong":qualityScore>=60?"Good":"Needs Work"}</span>
+            {qualityScore!==null && (() => {
+              const [showQuality, setShowQuality] = React.useState(false);
+              return (
+                <div style={{borderBottom:"1px solid #1a3a5a",background:"#0a1628",flexShrink:0}}>
+                  {/* Compact header — always visible */}
+                  <div onClick={()=>setShowQuality(!showQuality)}
+                    style={{padding:"8px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</span>
+                      <span style={{color:scoreColor,fontSize:16,fontWeight:900}}>{qualityScore}%</span>
+                      <span style={{background:scoreColor,color:"#001a10",fontSize:10,padding:"1px 8px",borderRadius:20,fontWeight:700}}>{qualityScore>=80?"Strong":qualityScore>=60?"Good":"Needs Work"}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{color:"#00c887",fontSize:10,fontWeight:700}}>
+                        {humanChecks.filter(c=>c.checked).length}/{humanChecks.length} reviewed
+                      </span>
+                      <span style={{color:"#4a6a8a",fontSize:12}}>{showQuality?"▲":"▼"} {showQuality?"Hide":"Show"}</span>
+                    </div>
                   </div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:10}}>
-                  {qualityChecks.map((c,i)=>(
-                    <div key={i} style={{display:"flex",gap:6,background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:"4px 8px"}}>
-                      <span style={{fontSize:11}}>{statusIcon(c.status)}</span>
-                      <div>
-                        <div style={{color:"#ddeeff",fontSize:10,fontWeight:600}}>{c.label}</div>
-                        <div style={{color:"#4a6a8a",fontSize:9}}>{c.note}</div>
+                  {/* Expandable details */}
+                  {showQuality && (
+                    <div style={{padding:"0 20px 12px"}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:10}}>
+                        {qualityChecks.map((c,i)=>(
+                          <div key={i} style={{display:"flex",gap:6,background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:"4px 8px"}}>
+                            <span style={{fontSize:11}}>{statusIcon(c.status)}</span>
+                            <div>
+                              <div style={{color:"#ddeeff",fontSize:10,fontWeight:600}}>{c.label}</div>
+                              <div style={{color:"#4a6a8a",fontSize:9}}>{c.note}</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                      <div style={{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:6}}>YOUR REVIEW CHECKLIST</div>
+                      {humanChecks.map((c,i)=>(
+                        <div key={i} onClick={()=>toggleHumanCheck(i)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",cursor:"pointer",background:c.checked?"#0a2a18":"transparent",border:"1px solid "+(c.checked?"#00c88740":"#1a3a5a"),borderRadius:6,marginBottom:4}}>
+                          <div style={{width:15,height:15,border:"2px solid "+(c.checked?"#00c887":"#3a6a8a"),background:c.checked?"#00c887":"transparent",borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            {c.checked && <span style={{color:"#001a10",fontSize:9,fontWeight:900}}>v</span>}
+                          </div>
+                          <span style={{color:c.checked?"#00e5a0":"#8aaabb",fontSize:12}}>{c.label}</span>
+                        </div>
+                      ))}
+                      {humanDone && <div style={{marginTop:8,background:"#0a2a18",border:"1px solid #00c88750",borderRadius:8,padding:"8px",textAlign:"center",color:"#00e5a0",fontSize:13,fontWeight:700}}>Ready to submit!</div>}
                     </div>
-                  ))}
+                  )}
                 </div>
-                <div style={{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:6}}>YOUR REVIEW CHECKLIST</div>
-                {humanChecks.map((c,i)=>(
-                  <div key={i} onClick={()=>toggleHumanCheck(i)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",cursor:"pointer",background:c.checked?"#0a2a18":"transparent",border:"1px solid " + (c.checked?"#00c88740":"#1a3a5a"),borderRadius:6,marginBottom:4}}>
-                    <div style={{width:15,height:15,border:"2px solid " + (c.checked?"#00c887":"#3a6a8a"),background:c.checked?"#00c887":"transparent",borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      {c.checked && <span style={{color:"#001a10",fontSize:9,fontWeight:900}}>v</span>}
-                    </div>
-                    <span style={{color:c.checked?"#00e5a0":"#8aaabb",fontSize:12}}>{c.label}</span>
-                  </div>
-                ))}
-                {humanDone && <div style={{marginTop:8,background:"#0a2a18",border:"1px solid #00c88750",borderRadius:8,padding:"8px",textAlign:"center",color:"#00e5a0",fontSize:13,fontWeight:700}}>Ready to submit!</div>}
-              </div>
-            )}
+              );
+            })()}
             <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
               <pre style={{color:"#b8d4ec",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Source Sans 3',sans-serif"}}>{proposal}</pre>
             </div>
@@ -437,22 +453,14 @@ function App() {
               <div style={{color:"#8aaabb",fontSize:12,letterSpacing:1.5,fontWeight:600}}>CONTRACT INTELLIGENCE - POWERED BY UpAI</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#ffffff18",color:"#fff",fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,border:"1px solid #ffffff30"}}>{c}</span>)}
-            {showRestoreBar && <button onClick={()=>{const s=localStorage.getItem("upai_last_proposal");if(s){navigator.clipboard.writeText(JSON.parse(s).proposal);alert("Copied!");}}} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:4,padding:"4px 10px",fontWeight:700,fontSize:11,cursor:"pointer"}}>Saved</button>}
+          <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:160}}>
+            {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#ffffff18",color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:20,fontWeight:700,border:"1px solid #ffffff30"}}>{c}</span>)}
+            {showRestoreBar && <button onClick={()=>{const s=localStorage.getItem("upai_last_proposal");if(s){navigator.clipboard.writeText(JSON.parse(s).proposal);alert("Copied!");}}} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:4,padding:"3px 8px",fontWeight:700,fontSize:10,cursor:"pointer"}}>Saved</button>}
           </div>
         </div>
       </div>
 
-      {showRestoreBar && (
-        <div style={{background:"#0a2a18",borderBottom:"1px solid #00c88730",padding:"8px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{color:"#00e5a0",fontSize:12}}>UpAI has a saved proposal from your last session.</span>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{const s=localStorage.getItem("upai_last_proposal");if(s){navigator.clipboard.writeText(JSON.parse(s).proposal);alert("Copied!");}}} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:4,padding:"4px 12px",fontWeight:700,fontSize:12,cursor:"pointer"}}>Copy Saved</button>
-            <button onClick={()=>setShowRestoreBar(false)} style={{background:"none",border:"none",color:"#4a6a8a",fontSize:16,cursor:"pointer"}}>X</button>
-          </div>
-        </div>
-      )}
+
 
       <div style={{maxWidth:1100,margin:"0 auto",padding:"16px 20px"}}>
         <div style={{background:"#111f2e",border:"1px solid #1a3a5a",borderRadius:8,padding:"12px 20px",marginBottom:14,display:"flex",flexWrap:"wrap",gap:"10px 28px"}}>
