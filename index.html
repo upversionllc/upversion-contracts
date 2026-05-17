@@ -35,16 +35,41 @@ function makeUrl(sector, code, keyword) {
 }
 
 function makeAwardUrl(sector, code) {
-  // Dynamic 36-month date range from today
+  // Dynamic 36-month date range using exact SAM.gov URL format
   const today = new Date();
   const past = new Date();
   past.setMonth(today.getMonth() - 36);
-  function fmt(d) {
-    return (d.getMonth()+1).toString().padStart(2,"0") + "/" + d.getDate().toString().padStart(2,"0") + "/" + d.getFullYear();
+
+  // ISO format: 2023-05-17T04:00:00.000Z
+  function isoFmt(d) {
+    return d.getFullYear() + "-" +
+      (d.getMonth()+1).toString().padStart(2,"0") + "-" +
+      d.getDate().toString().padStart(2,"0") + "T04:00:00.000Z";
   }
-  const dateFrom = encodeURIComponent(fmt(past));
-  const dateTo = encodeURIComponent(fmt(today));
-  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_inactive%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector + "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code + "&sfm%5Bdates%5D%5BsignedDate%5D%5Bfrom%5D=" + dateFrom + "&sfm%5Bdates%5D%5BsignedDate%5D%5Bto%5D=" + dateTo;
+  // Short format: 05%2F17%2F2023
+  function shortFmt(d) {
+    return encodeURIComponent(
+      (d.getMonth()+1).toString().padStart(2,"0") + "/" +
+      d.getDate().toString().padStart(2,"0") + "/" +
+      d.getFullYear()
+    );
+  }
+
+  const isoFrom = encodeURIComponent(isoFmt(past));
+  const isoTo = encodeURIComponent(isoFmt(today));
+  const shortFrom = shortFmt(past);
+  const shortTo = shortFmt(today);
+
+  return "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate" +
+    "&sfm%5Bstatus%5D%5Bis_inactive%5D=true" +
+    "&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL" +
+    "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector +
+    "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code +
+    "&sfm%5Bdates%5D%5BdateSigned%5D%5BdateSignedSelect%5D=customDate" +
+    "&sfm%5Bdates%5D%5BdateSigned%5D%5BdateSignedFrom%5D=" + isoFrom +
+    "&sfm%5Bdates%5D%5BdateSigned%5D%5BdateSignedTo%5D=" + isoTo +
+    "&sfm%5Bdates%5D%5BsignedDate%5D%5Bfrom%5D=" + shortFrom +
+    "&sfm%5Bdates%5D%5BsignedDate%5D%5Bto%5D=" + shortTo;
 }
 
 function extractNoticeId(url) {
