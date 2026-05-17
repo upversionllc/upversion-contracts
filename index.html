@@ -34,6 +34,13 @@ function makeUrl(sector, code, keyword) {
   return url;
 }
  
+function makeAwardUrl(sector, code) {
+  let url = "https://sam.gov/search/?index=awd&page=1&pageSize=25&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true&sfm%5BsimpleSearch%5D%5BkeywordRadio%5D=ALL";
+  url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bkey%5D=" + sector;
+  url += "&sfm%5BserviceClassificationWrapper%5D%5Bnaics%5D%5B0%5D%5Bvalue%5D=" + code;
+  return url;
+}
+ 
 function extractNoticeId(url) {
   if (!url) return "";
   const m = url.match(/opp\/([a-zA-Z0-9]+)\//);
@@ -330,6 +337,10 @@ function CategoryCard({ cat, onDraft }) {
               style={{ background:"linear-gradient(135deg,#00c887,#009966)", color:"#001a10", border:"none", borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
               ✦ Draft
             </button>
+            <a href={makeAwardUrl(row.sector, row.naics)} target="_blank" rel="noopener noreferrer"
+              style={{ background:"#1a0a2e", color:"#c084fc", border:"1px solid #c084fc50", borderRadius:10, padding:"8px 14px", fontSize:12, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap", flexShrink:0 }}>
+              🏆 Past Awards
+            </a>
           </div>
         ))}
  
