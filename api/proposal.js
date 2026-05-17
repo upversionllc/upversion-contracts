@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   try {
     const key = process.env.ANTHROPIC_API_KEY;
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const { prompt, fetchUrl } = body || {};
+    const { prompt, fetchUrl, maxTokens } = body || {};
 
     let pageContent = "";
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-opus-4-7",
-        max_tokens: 4000,
+        max_tokens: maxTokens || 6000,
         messages: [{ role: "user", content: finalPrompt }]
       })
     });
