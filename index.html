@@ -144,7 +144,7 @@ function ProposalModal({ row, cat, savedData, onClose }) {
   const [qualityChecks, setQualityChecks] = React.useState(savedData?.qualityChecks || []);
   const [humanChecks, setHumanChecks] = React.useState(savedData?.humanChecks || []);
   const [saved, setSaved] = React.useState(!!savedData);
-  const [showQuality, setShowQuality] = React.useState(!!savedData);
+  const [showQuality, setShowQuality] = React.useState(true);
   const fileRef = React.useRef();
 
   const pageMsg = useRotatingMsg(PAGE_MSGS, phase==="readingPage");
@@ -210,28 +210,23 @@ function ProposalModal({ row, cat, savedData, onClose }) {
         const parsed = JSON.parse(qt.replace(/```json|```/g,"").trim());
         setQualityScore(parsed.score);
         setQualityChecks(parsed.checks || []);
-        setHumanChecks([
-          {label:"Past performance examples are accurate",checked:false},
-          {label:"All requirements are addressed",checked:false},
-          {label:"Pricing/cost is realistic",checked:false},
-          {label:"Someone else has reviewed this",checked:false},
-          {label:"Ready to submit",checked:false},
-        ]);
-      } catch(e) { setQualityScore(75); setQualityChecks([]); }
-      // Update saved data with quality results
-      try {
-        const existing = JSON.parse(localStorage.getItem("upai_last_proposal") || "{}");
-        existing.qualityScore = parsed ? parsed.score : 75;
-        existing.qualityChecks = parsed ? (parsed.checks || []) : [];
-        existing.humanChecks = [
+        const hChecks = [
           {label:"Past performance examples are accurate",checked:false},
           {label:"All requirements are addressed",checked:false},
           {label:"Pricing/cost is realistic",checked:false},
           {label:"Someone else has reviewed this",checked:false},
           {label:"Ready to submit",checked:false},
         ];
-        localStorage.setItem("upai_last_proposal", JSON.stringify(existing));
-      } catch(e2) {}
+        setHumanChecks(hChecks);
+        // Save everything to localStorage including quality
+        try {
+          const existing = JSON.parse(localStorage.getItem("upai_last_proposal") || "{}");
+          existing.qualityScore = parsed.score;
+          existing.qualityChecks = parsed.checks || [];
+          existing.humanChecks = hChecks;
+          localStorage.setItem("upai_last_proposal", JSON.stringify(existing));
+        } catch(e2) {}
+      } catch(e) { setQualityScore(75); setQualityChecks([]); }
       setPhase("done");
     } catch(e) { setProposal("Error: "+e.message); setPhase("done"); }
   }
