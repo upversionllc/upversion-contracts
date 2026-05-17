@@ -7,19 +7,18 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Merriweather:wght@700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #020c18; font-family: 'IBM Plex Sans', sans-serif; color: #ddeeff; }
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #060f1c; }
-::-webkit-scrollbar-thumb { background: #1a3a58; border-radius: 3px; }
+body { background: #0d1b2a; font-family: 'Source Sans 3', sans-serif; color: #ddeeff; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f0f0f0; }
+::-webkit-scrollbar-thumb { background: #b0c4d8; border-radius: 3px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0;} }
-@keyframes pulse { 0%,100%{opacity:0.6;transform:scale(1);}50%{opacity:1;transform:scale(1.05);} }
-@keyframes slideUp { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
-@keyframes typewriter { from{width:0;}to{width:100%;} }
-@keyframes glow { 0%,100%{box-shadow:0 0 10px #00c88730;}50%{box-shadow:0 0 25px #00c88760;} }
+@keyframes pulse { 0%,100%{opacity:0.7;transform:scale(1);}50%{opacity:1;transform:scale(1.04);} }
+@keyframes slideUp { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+.btn-hover:hover { filter: brightness(1.08); transform: translateY(-1px); transition: all 0.15s; }
 </style>
 </head>
 <body>
@@ -51,81 +50,45 @@ function extractNoticeId(url) {
   return m ? m[1] : "";
 }
 
+function readFilesAsText(files) {
+  return Promise.all(Array.from(files).map(file => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve({ name: file.name, content: e.target.result, size: file.size });
+    reader.onerror = () => resolve({ name: file.name, content: "[Could not read file]", size: file.size });
+    reader.readAsText(file);
+  })));
+}
+
 const CATEGORIES = [
-  {
-    id:"biotech", icon:"🧬", label:"Bio Pharma", description:"Biotech & pharmaceutical R&D and technical training — NIH, FDA, DOD, NJ state agencies.", accentColor:"#00c887",
+  { id:"biotech", icon:"🧬", label:"Bio Pharma", description:"Biotech & pharmaceutical R&D and technical training — NIH, FDA, DOD, NJ state agencies.", color:"#00a86b",
     naicsRows:[
       {naics:"611519",sector:"61",label:"611519 — Other Technical and Trade Schools",bestKw:"pharmaceutical"},
       {naics:"541714",sector:"54",label:"541714 — R&D in Biotechnology",bestKw:"biotechnology"},
       {naics:"541715",sector:"54",label:"541715 — R&D in Physical, Engineering & Life Sciences",bestKw:"life sciences"},
-    ],
-  },
-  {
-    id:"it", icon:"💻", label:"IT Training", description:"Computer training, IT workforce development, and technical skills training for federal agencies.", accentColor:"#4fc3f7",
-    naicsRows:[
-      {naics:"611420",sector:"61",label:"611420 — Computer Training",bestKw:"training"},
-    ],
-  },
-  {
-    id:"marketing", icon:"📣", label:"Marketing", description:"Marketing consulting, outreach campaigns, and communications strategy for federal agencies.", accentColor:"#f0c040",
-    naicsRows:[
-      {naics:"541613",sector:"54",label:"541613 — Marketing Consulting Services",bestKw:"marketing services"},
-    ],
-  },
-  {
-    id:"management", icon:"🎓", label:"Management Training", description:"Professional development, management training, and administrative consulting for federal agencies.", accentColor:"#c084fc",
+    ]},
+  { id:"it", icon:"💻", label:"IT Training", description:"Computer training, IT workforce development, and technical skills training for federal agencies.", color:"#1a6fb5",
+    naicsRows:[{naics:"611420",sector:"61",label:"611420 — Computer Training",bestKw:"training"}]},
+  { id:"marketing", icon:"📣", label:"Marketing", description:"Marketing consulting, outreach campaigns, and communications strategy for federal agencies.", color:"#c45c00",
+    naicsRows:[{naics:"541613",sector:"54",label:"541613 — Marketing Consulting Services",bestKw:"marketing services"}]},
+  { id:"management", icon:"🎓", label:"Management Training", description:"Professional development, management training, and administrative consulting.", color:"#6b21a8",
     naicsRows:[
       {naics:"611430",sector:"61",label:"611430 — Professional and Management Development Training",bestKw:"management training"},
       {naics:"541611",sector:"54",label:"541611 — Administrative Management and General Management Consulting",bestKw:"management consulting"},
-    ],
-  },
+    ]},
 ];
 
 const TABS = [
-  {id:"all",label:"All"},
+  {id:"all",label:"All Categories"},
   {id:"biotech",label:"🧬 Bio Pharma"},
   {id:"it",label:"💻 IT Training"},
   {id:"marketing",label:"📣 Marketing"},
   {id:"management",label:"🎓 Management"},
 ];
 
-// UpAI reading messages
-const READING_MSGS = [
-  "🔍 UpAI is scanning your attachments...",
-  "📄 UpAI is extracting key requirements...",
-  "🧠 UpAI is understanding the technical scope...",
-  "📋 UpAI is identifying evaluation criteria...",
-  "🔎 UpAI is mapping deliverables and timelines...",
-  "✨ UpAI is building proposal intelligence...",
-];
-
-const PAGE_READING_MSGS = [
-  "🌐 UpAI is opening the SAM.gov contract page...",
-  "📡 UpAI is reading contract details...",
-  "🔍 UpAI is scanning notice type and requirements...",
-  "📋 UpAI is capturing agency information...",
-  "🧠 UpAI is understanding the scope of work...",
-  "✨ UpAI has read the contract page!",
-];
-
-const DRAFTING_MSGS = [
-  "✍️ UpAI is crafting your Executive Summary...",
-  "🏢 UpAI is writing Company Overview...",
-  "⚙️ UpAI is developing Technical Approach...",
-  "📊 UpAI is documenting Past Performance...",
-  "👤 UpAI is highlighting Key Personnel...",
-  "🏆 UpAI is making the winning argument...",
-  "🎯 UpAI is writing the Call to Action...",
-];
-
-const QUALITY_MSGS = [
-  "🔬 UpAI is checking requirement coverage...",
-  "✅ UpAI is verifying certifications mentioned...",
-  "📐 UpAI is scoring technical approach...",
-  "🎯 UpAI is evaluating competitive positioning...",
-  "⚖️ UpAI is checking compliance language...",
-  "🏅 UpAI is calculating your win score...",
-];
+const PAGE_READING_MSGS = ["🌐 Opening the SAM.gov contract page...","📡 Reading contract details...","🔍 Scanning requirements...","📋 Capturing agency info...","✨ Page read complete!"];
+const READING_MSGS = ["🔍 Scanning your attachments...","📄 Extracting requirements...","🧠 Understanding technical scope...","📋 Identifying criteria...","✨ Building proposal intelligence..."];
+const DRAFTING_MSGS = ["✍️ Crafting Executive Summary...","🏢 Writing Company Overview...","⚙️ Developing Technical Approach...","📊 Documenting Past Performance...","🏆 Making the winning argument..."];
+const QUALITY_MSGS = ["🔬 Checking requirement coverage...","✅ Verifying certifications...","📐 Scoring technical approach...","🏅 Calculating win score..."];
 
 function useRotatingMsg(msgs, active, interval=1800) {
   const [idx, setIdx] = React.useState(0);
@@ -137,41 +100,22 @@ function useRotatingMsg(msgs, active, interval=1800) {
   return msgs[idx];
 }
 
-function readFilesAsText(files) {
-  return Promise.all(Array.from(files).map(file => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve({ name: file.name, content: e.target.result, size: file.size });
-      reader.onerror = () => resolve({ name: file.name, content: "[Could not read file]", size: file.size });
-      if (file.type.includes("text") || file.name.endsWith(".txt")) {
-        reader.readAsText(file);
-      } else {
-        // For binary files (PDF, DOCX), we extract what we can
-        reader.readAsText(file);
-      }
-    });
-  }));
-}
-
 function ProposalModal({ row, cat, onClose }) {
-  const [phase, setPhase] = React.useState("input"); // input | reading | drafting | quality | done
+  const [phase, setPhase] = React.useState("input");
   const [noticeId, setNoticeId] = React.useState("");
   const [samUrl, setSamUrl] = React.useState("");
   const [title, setTitle] = React.useState("");
   const [agency, setAgency] = React.useState("");
   const [files, setFiles] = React.useState([]);
   const [dragging, setDragging] = React.useState(false);
+  const [showUpload, setShowUpload] = React.useState(false);
+  const [readPage, setReadPage] = React.useState(true);
   const [proposal, setProposal] = React.useState("");
   const [qualityScore, setQualityScore] = React.useState(null);
   const [qualityChecks, setQualityChecks] = React.useState([]);
   const [humanChecks, setHumanChecks] = React.useState([]);
   const [saved, setSaved] = React.useState(false);
-  const [showUpload, setShowUpload] = React.useState(false);
-  const [readPage, setReadPage] = React.useState(true);
   const fileRef = React.useRef();
-
-  // Saved to localStorage
-  const saveKey = `upai_proposal_${row.naics}_${Date.now()}`;
 
   const pageReadingMsg = useRotatingMsg(PAGE_READING_MSGS, phase==="readingPage");
   const readingMsg = useRotatingMsg(READING_MSGS, phase==="reading");
@@ -181,446 +125,284 @@ function ProposalModal({ row, cat, onClose }) {
   const detectedId = extractNoticeId(samUrl);
   const resolvedId = noticeId || detectedId;
 
-  // Prevent accidental close — only X button closes
   React.useEffect(() => {
     const handleKey = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  function handleDrop(e) {
-    e.preventDefault(); setDragging(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    setFiles(prev => [...prev, ...dropped]);
-  }
-
-  function handleFileInput(e) {
-    setFiles(prev => [...prev, ...Array.from(e.target.files)]);
-  }
-
-  function removeFile(i) {
-    setFiles(prev => prev.filter((_,idx) => idx !== i));
-  }
+  function handleDrop(e) { e.preventDefault(); setDragging(false); setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }
+  function handleFileInput(e) { setFiles(prev => [...prev, ...Array.from(e.target.files)]); }
+  function removeFile(i) { setFiles(prev => prev.filter((_,idx) => idx !== i)); }
 
   async function generate() {
-    let attachmentContext = "";
     let pageContext = "";
-
-    // Phase: reading SAM.gov page
     if (readPage && samUrl) {
       setPhase("readingPage");
       try {
-        const pageRes = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({prompt: "Read this page", fetchUrl: samUrl}),
+        const r = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({prompt:"Read page", fetchUrl: samUrl}),
         });
-        const pageData = await pageRes.json();
-        if (pageData.pageRead) {
-          pageContext = pageData.pagePreview || "";
-        }
-      } catch(e) {
-        console.log("Page read failed:", e.message);
-      }
+        const d = await r.json();
+        if (d.pageRead) pageContext = d.pagePreview || "";
+      } catch(e) {}
       await new Promise(r => setTimeout(r, 2000));
     }
 
-    // Phase: reading attachments
+    let attachmentContext = "";
     if (files.length > 0) {
       setPhase("reading");
       await new Promise(r => setTimeout(r, 2500));
-      const fileContents = await readFilesAsText(files);
-      attachmentContext = fileContents.map(f =>
-        `\n--- ATTACHMENT: ${f.name} ---\n${f.content.slice(0, 3000)}`
-      ).join("\n");
+      const fc = await readFilesAsText(files);
+      attachmentContext = fc.map(f => `\n--- ${f.name} ---\n${f.content.slice(0,3000)}`).join("\n");
     }
 
-    // Phase: drafting
     setPhase("drafting");
-
     const prompt = `You are UpAI, a professional government contract proposal writer for UPVERSION LLC.
-
-COMPANY PROFILE:
-- Name: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
-- Owner/President: Mahezabin Tai — biotech manufacturing trainer, institute and government college instructor
-- Address: 253 Deep Brook Ct, Piscataway, NJ (NJ = #1 pharma/biotech state)
-- Certifications: MBE, SBE, Asian-Pacific American Owned
-- NAICS: 541613, 541611, 611420, 611430, 541714, 541715, 611519
-
-CONTRACT OPPORTUNITY:
+COMPANY: UPVERSION LLC | UEI: Q1KPWH41NC57 | CAGE: 16LF8
+Owner: Mahezabin Tai, President — biotech manufacturing trainer
+Address: 253 Deep Brook Ct, Piscataway, NJ
+Certifications: MBE, SBE, Asian-Pacific American Owned
+NAICS: 541613, 541611, 611420, 611430, 541714, 541715, 611519
+OPPORTUNITY:
 - Category: ${cat.label}
 - NAICS: ${row.naics} — ${row.label}
 - Notice ID: ${resolvedId || "See solicitation"}
 - Title: ${title || "See solicitation"}
 - Agency: ${agency || "Federal Agency"}
-${pageContext ? `\n--- SAM.GOV PAGE DETAILS ---\n${pageContext}` : ""}
-${attachmentContext ? `\nATTACHMENT CONTENTS (use these to tailor the proposal):\n${attachmentContext}` : ""}
-
-Write a compelling, tailored government proposal:
+${pageContext ? `\n--- SAM.GOV PAGE ---\n${pageContext}` : ""}
+${attachmentContext ? `\n--- ATTACHMENTS ---\n${attachmentContext}` : ""}
+Write a compelling government proposal:
 1. EXECUTIVE SUMMARY
 2. COMPANY OVERVIEW & CERTIFICATIONS
-3. TECHNICAL APPROACH ${attachmentContext||pageContext ? "(reference specific requirements from the page/attachments)" : ""}
-4. PAST PERFORMANCE (3 relevant examples)
-5. KEY PERSONNEL (Mahezabin Tai, President)
-6. WHY UPVERSION LLC WINS THIS CONTRACT
-7. CALL TO ACTION
-
-Formal government tone. Be specific, reference all available details.`;
+3. TECHNICAL APPROACH
+4. PAST PERFORMANCE (3 examples)
+5. KEY PERSONNEL (Mahezabin Tai)
+6. WHY UPVERSION LLC WINS
+7. CALL TO ACTION`;
 
     try {
       const res = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
+        method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({prompt}),
       });
       const data = await res.json();
-      const full = (data.content && data.content.map(c => c.text||"").join("\n")) || "Error generating proposal.";
+      const full = (data.content && data.content.map(c=>c.text||"").join("\n")) || "Error generating proposal.";
       setProposal(full);
-
-      // Auto-save
       try {
-        const saveData = {
-          proposal: full, noticeId: resolvedId, title, agency, naics: row.naics,
-          savedAt: new Date().toISOString(), cat: cat.label
-        };
-        localStorage.setItem("upai_last_proposal", JSON.stringify(saveData));
+        localStorage.setItem("upai_last_proposal", JSON.stringify({proposal:full,noticeId:resolvedId,title,agency,naics:row.naics,savedAt:new Date().toISOString(),cat:cat.label}));
         setSaved(true);
-        console.log("UpAI Auto-saved proposal to browser storage");
-      } catch(e) {
-        console.log("Auto-save failed:", e.message);
-      }
+      } catch(e) {}
 
-      // Phase: quality check
       setPhase("quality");
       await new Promise(r => setTimeout(r, 2000));
 
-      // Run quality check
-      const qPrompt = `You are UpAI quality checker. Review this government proposal and return ONLY a JSON object (no markdown, no explanation):
-{
-  "score": <number 0-100>,
-  "checks": [
-    {"label": "Executive Summary", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Certifications Mentioned", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Technical Approach", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Past Performance", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Key Personnel", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Competitive Differentiators", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Call to Action", "status": "pass|warn|fail", "note": "brief note"},
-    {"label": "Government Tone & Compliance", "status": "pass|warn|fail", "note": "brief note"}
-  ],
-  "improvements": ["improvement 1", "improvement 2", "improvement 3"]
-}
-
-PROPOSAL TO REVIEW:
-${full.slice(0, 3000)}`;
+      const qPrompt = `Review this government proposal and return ONLY valid JSON (no markdown):
+{"score":<0-100>,"checks":[{"label":"Executive Summary","status":"pass|warn|fail","note":"brief"},{"label":"Certifications","status":"pass|warn|fail","note":"brief"},{"label":"Technical Approach","status":"pass|warn|fail","note":"brief"},{"label":"Past Performance","status":"pass|warn|fail","note":"brief"},{"label":"Key Personnel","status":"pass|warn|fail","note":"brief"},{"label":"Differentiators","status":"pass|warn|fail","note":"brief"},{"label":"Call to Action","status":"pass|warn|fail","note":"brief"},{"label":"Compliance Tone","status":"pass|warn|fail","note":"brief"}]}
+PROPOSAL:\n${full.slice(0,3000)}`;
 
       const qRes = await fetch("https://upversion-contracts.vercel.app/api/proposal", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
+        method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({prompt: qPrompt}),
       });
       const qData = await qRes.json();
-      const qText = (qData.content && qData.content.map(c => c.text||"").join("")) || "{}";
-
+      const qText = (qData.content && qData.content.map(c=>c.text||"").join("")) || "{}";
       try {
-        const clean = qText.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(clean);
+        const parsed = JSON.parse(qText.replace(/```json|```/g,"").trim());
         setQualityScore(parsed.score);
         setQualityChecks(parsed.checks || []);
-        // Human checklist
         setHumanChecks([
-          {label:"Past performance examples are accurate", checked:false},
-          {label:"Pricing/cost approach is realistic", checked:false},
-          {label:"All SOW requirements are addressed", checked:false},
-          {label:"Someone else has reviewed this", checked:false},
-          {label:"Ready to submit", checked:false},
+          {label:"Past performance examples are accurate",checked:false},
+          {label:"All requirements are addressed",checked:false},
+          {label:"Pricing/cost is realistic",checked:false},
+          {label:"Someone else has reviewed this",checked:false},
+          {label:"Ready to submit",checked:false},
         ]);
-      } catch(e) {
-        setQualityScore(75);
-        setQualityChecks([]);
-      }
-
+      } catch(e) { setQualityScore(75); setQualityChecks([]); }
       setPhase("done");
-    } catch(e) {
-      setProposal("Error: " + e.message);
-      setPhase("done");
-    }
+    } catch(e) { setProposal("Error: "+e.message); setPhase("done"); }
   }
 
-  function toggleHumanCheck(i) {
-    setHumanChecks(prev => prev.map((c,idx) => idx===i ? {...c, checked:!c.checked} : c));
-  }
+  function toggleHumanCheck(i) { setHumanChecks(prev => prev.map((c,idx) => idx===i ? {...c,checked:!c.checked} : c)); }
+  const humanDone = humanChecks.length > 0 && humanChecks.every(c=>c.checked);
+  const statusIcon = s => s==="pass"?"✅":s==="warn"?"⚠️":"❌";
+  const scoreColor = qualityScore>=80?"#00a86b":qualityScore>=60?"#c45c00":"#c0392b";
 
-  const humanDone = humanChecks.length > 0 && humanChecks.every(c => c.checked);
-
-  const statusColor = s => s==="pass" ? "#00e5a0" : s==="warn" ? "#f0c040" : "#ff4d6d";
-  const statusIcon = s => s==="pass" ? "✅" : s==="warn" ? "⚠️" : "❌";
-
-  const scoreColor = qualityScore >= 80 ? "#00e5a0" : qualityScore >= 60 ? "#f0c040" : "#ff4d6d";
-  const scoreLabel = qualityScore >= 80 ? "Strong" : qualityScore >= 60 ? "Good" : "Needs Work";
+  const inputStyle = {width:"100%",background:"#fff",border:"1px solid #c6d2db",borderRadius:4,padding:"8px 12px",color:"#1b2a32",fontSize:14,outline:"none",fontFamily:"'Source Sans 3',sans-serif"};
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,5,15,0.96)",backdropFilter:"blur(12px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div style={{background:"linear-gradient(160deg,#081828,#0a1e34)",border:"1px solid #1a4060",borderRadius:20,width:"100%",maxWidth:720,maxHeight:"92vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div style={{background:"#fff",borderRadius:4,border:"1px solid #c6d2db",width:"100%",maxWidth:700,maxHeight:"92vh",display:"flex",flexDirection:"column",boxShadow:"0 4px 20px rgba(0,0,0,0.15)",animation:"slideUp 0.2s ease"}}>
 
-        {/* Header */}
-        <div style={{padding:"16px 20px 12px",borderBottom:"1px solid #142a3e",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        {/* SAM.gov style header */}
+        <div style={{background:"#1b2a32",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
           <div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#001a10"}}>U</div>
-              <div>
-                <div style={{color:"#00e5a0",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI — PROPOSAL DRAFT</div>
-                <div style={{color:"#ddeeff",fontSize:13,fontWeight:700,fontFamily:"'DM Serif Display',Georgia,serif"}}>{cat.icon} {cat.label} · {row.naics}</div>
-              </div>
-            </div>
+            <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1.5,marginBottom:2}}>UpAI — CONTRACT PROPOSAL DRAFT</div>
+            <div style={{color:"#fff",fontSize:14,fontWeight:700}}>{cat.icon} {cat.label} · NAICS {row.naics}</div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {saved && (
-            <div style={{background:"#0a2a18",border:"1px solid #00c88730",borderRadius:10,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:12}}>💾</span>
-              <div>
-                <div style={{color:"#00e5a0",fontSize:10,fontWeight:700}}>Auto-saved!</div>
-                <div style={{color:"#2a6a44",fontSize:9}}>Stored in your browser</div>
-              </div>
-            </div>
-          )}
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:20,cursor:"pointer"}}>✕</button>
-          </div>
+          <button onClick={onClose} style={{background:"none",border:"1px solid #ffffff40",color:"#fff",borderRadius:4,padding:"4px 12px",cursor:"pointer",fontSize:13}}>✕ Close</button>
         </div>
 
-        {/* INPUT PHASE */}
+        {/* Input Phase */}
         {phase==="input" && (
-          <div style={{overflowY:"auto",padding:"18px 20px"}}>
-
-            {/* Notice ID */}
-            <div style={{background:"#060f1c",border:"1px solid #132436",borderRadius:12,padding:"14px",marginBottom:12}}>
-              <div style={{color:"#00e5a0",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>OPTION 1 — Notice ID</div>
-              <input value={noticeId} onChange={e=>setNoticeId(e.target.value)} placeholder="e.g. W9124X26QA014"
-                style={{width:"100%",background:"#0a1628",border:noticeId?"1px solid #00c88760":"1px solid #1e3a5a",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",fontFamily:"'IBM Plex Mono',monospace"}}/>
-              {noticeId && <div style={{color:"#00c887",fontSize:10,marginTop:5}}>✓ Notice ID entered</div>}
+          <div style={{overflowY:"auto",padding:"20px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+              <div>
+                <label style={{fontSize:13,fontWeight:700,color:"#1b2a32",display:"block",marginBottom:5}}>Notice ID</label>
+                <input value={noticeId} onChange={e=>setNoticeId(e.target.value)} placeholder="e.g. W9124X26QA014" style={inputStyle}/>
+                {noticeId && <div style={{color:"#00a86b",fontSize:12,marginTop:4}}>✓ Notice ID entered</div>}
+              </div>
+              <div>
+                <label style={{fontSize:13,fontWeight:700,color:"#1b2a32",display:"block",marginBottom:5}}>Agency Name <span style={{color:"#6b7c8a",fontWeight:400}}>(optional)</span></label>
+                <input value={agency} onChange={e=>setAgency(e.target.value)} placeholder="e.g. Dept of Army, NIH, VA" style={inputStyle}/>
+              </div>
             </div>
 
-            {/* OR */}
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-              <div style={{flex:1,height:1,background:"#132436"}}/>
-              <div style={{color:"#3a6a8a",fontSize:12,fontWeight:700}}>OR</div>
-              <div style={{flex:1,height:1,background:"#132436"}}/>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:13,fontWeight:700,color:"#1b2a32",display:"block",marginBottom:5}}>Contract Title <span style={{color:"#6b7c8a",fontWeight:400}}>(optional)</span></label>
+              <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Paste contract title from SAM.gov" style={inputStyle}/>
             </div>
 
-            {/* URL */}
-            <div style={{background:"#060f1c",border:"1px solid #132436",borderRadius:12,padding:"14px",marginBottom:16}}>
-              <div style={{color:"#4fc3f7",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>OPTION 2 — Full SAM.gov URL</div>
-              <input value={samUrl} onChange={e=>setSamUrl(e.target.value)} placeholder="https://sam.gov/opp/.../view"
-                style={{width:"100%",background:"#0a1628",border:samUrl?"1px solid #4fc3f760":"1px solid #1e3a5a",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",fontFamily:"'IBM Plex Mono',monospace"}}/>
-              {samUrl && detectedId && <div style={{color:"#00c887",fontSize:10,marginTop:5}}>✓ Notice ID detected: {detectedId}</div>}
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:13,fontWeight:700,color:"#1b2a32",display:"block",marginBottom:5}}>Full SAM.gov URL <span style={{color:"#6b7c8a",fontWeight:400}}>(optional)</span></label>
+              <input value={samUrl} onChange={e=>setSamUrl(e.target.value)} placeholder="https://sam.gov/opp/.../view" style={inputStyle}/>
+              {samUrl && detectedId && <div style={{color:"#00a86b",fontSize:12,marginTop:4}}>✓ Notice ID auto-detected: {detectedId}</div>}
               {samUrl && (
                 <div onClick={()=>setReadPage(!readPage)}
-                  style={{display:"flex",alignItems:"center",gap:8,marginTop:10,cursor:"pointer",padding:"8px 10px",background:readPage?"#0a2a18":"#0a1628",borderRadius:9,border:`1px solid ${readPage?"#00c88750":"#1e3a5a"}`,transition:"all 0.2s"}}>
-                  <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${readPage?"#00c887":"#2a5a78"}`,background:readPage?"#00c887":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
-                    {readPage && <span style={{color:"#001a10",fontSize:11,fontWeight:900}}>✓</span>}
+                  style={{display:"flex",alignItems:"center",gap:8,marginTop:8,cursor:"pointer",padding:"8px 12px",background:readPage?"#e8f5f0":"#f5f7fa",border:`1px solid ${readPage?"#00a86b":"#c6d2db"}`,borderRadius:4}}>
+                  <div style={{width:16,height:16,border:`2px solid ${readPage?"#00a86b":"#6b7c8a"}`,background:readPage?"#00a86b":"#fff",borderRadius:2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {readPage && <span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
                   </div>
                   <div>
-                    <div style={{color:readPage?"#00e5a0":"#4fc3f7",fontSize:12,fontWeight:700}}>🌐 Let UpAI read the contract page first</div>
-                    <div style={{color:"#2a5a78",fontSize:10}}>UpAI will scan the SAM.gov page for details before drafting</div>
+                    <div style={{color:"#1b2a32",fontSize:13,fontWeight:700}}>🌐 Let UpAI read the contract page first</div>
+                    <div style={{color:"#6b7c8a",fontSize:12}}>UpAI will scan the SAM.gov page for all available details before drafting</div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
-
-            {/* Optional fields */}
-            <div style={{color:"#3a6a8a",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:8}}>ADDITIONAL DETAILS (OPTIONAL)</div>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Contract title from SAM.gov"
-              style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:10}}/>
-            <input value={agency} onChange={e=>setAgency(e.target.value)} placeholder="Agency (e.g. NIH, Army, VA)"
-              style={{width:"100%",background:"#060f1c",border:"1px solid #132436",borderRadius:9,padding:"10px 14px",color:"#b8d4ec",fontSize:13,outline:"none",marginBottom:16}}/>
-
-            <div style={{borderTop:"1px solid #132436",marginBottom:14}}/>
-
-            {/* Option B — Two paths */}
-            {!showUpload ? (
-              <div>
-                <div style={{background:"linear-gradient(135deg,#0a1e10,#081a0e)",border:"1px solid #00c88730",borderRadius:12,padding:"14px",marginBottom:14,textAlign:"center"}}>
-                  <div style={{fontSize:22,marginBottom:6}}>💡</div>
-                  <div style={{color:"#00e5a0",fontSize:12,fontWeight:700,marginBottom:4}}>Want a more tailored proposal?</div>
-                  <div style={{color:"#2a6a44",fontSize:11,lineHeight:1.6,marginBottom:12}}>Download attachments from SAM.gov first (SOW, technical docs, forms), then upload them here. UpAI will read everything and write a perfectly targeted proposal.</div>
-                  <button onClick={()=>setShowUpload(true)}
-                    style={{background:"#0a2a18",color:"#00c887",border:"1px solid #00c88740",borderRadius:10,padding:"9px 20px",fontWeight:700,fontSize:12,cursor:"pointer",width:"100%",marginBottom:8}}>
-                    📎 Upload Attachments First
-                  </button>
-                  <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
-                    style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:10,padding:"10px",fontWeight:800,fontSize:14,cursor:(resolvedId||title||agency)?"pointer":"not-allowed"}}>
-                    ✦ Draft Now (no attachments)
+            <div style={{borderTop:"1px solid #e5eaee",paddingTop:16,marginBottom:16}}>
+              {!showUpload ? (
+                <div style={{background:"#f0faf6",border:"1px solid #b3deca",borderRadius:4,padding:"14px 16px"}}>
+                  <div style={{color:"#1b2a32",fontSize:13,fontWeight:700,marginBottom:4}}>📎 Want a more targeted proposal?</div>
+                  <div style={{color:"#4a6572",fontSize:13,marginBottom:12}}>Download attachments from SAM.gov (SOW, technical docs, forms) and upload them. UpAI will read everything before drafting.</div>
+                  <button onClick={()=>setShowUpload(true)} style={{background:"#fff",color:"#1a6fb5",border:"1px solid #1a6fb5",borderRadius:4,padding:"7px 16px",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                    📎 Upload Attachments
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1}}>📎 UPLOAD ATTACHMENTS</div>
-                  <button onClick={()=>setShowUpload(false)} style={{background:"none",border:"none",color:"#3a6a8a",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Skip → Draft without</button>
-                </div>
-                <div
-                  onDragOver={e=>{e.preventDefault();setDragging(true);}}
-                  onDragLeave={()=>setDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={()=>fileRef.current.click()}
-                  style={{border:`2px dashed ${dragging?"#00c887":"#1e3a5a"}`,borderRadius:12,padding:"20px",textAlign:"center",cursor:"pointer",background:dragging?"#0a2a18":"#060f1c",transition:"all 0.2s",marginBottom:10}}>
-                  <div style={{fontSize:28,marginBottom:8}}>📁</div>
-                  <div style={{color:dragging?"#00e5a0":"#3a6a8a",fontSize:13,fontWeight:600}}>
-                    {dragging ? "Drop files here!" : "Drag & drop files OR click to browse"}
+              ) : (
+                <div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <label style={{fontSize:13,fontWeight:700,color:"#1b2a32"}}>Upload Attachments</label>
+                    <button onClick={()=>setShowUpload(false)} style={{background:"none",border:"none",color:"#1a6fb5",fontSize:12,cursor:"pointer",textDecoration:"underline"}}>Skip</button>
                   </div>
-                  <div style={{color:"#2a4a68",fontSize:11,marginTop:4}}>PDF, DOCX, TXT — multiple files supported</div>
-                  <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.doc" onChange={handleFileInput} style={{display:"none"}}/>
-                </div>
-
-                {files.length > 0 && (
-                  <div style={{marginBottom:12}}>
-                    {files.map((f,i) => (
-                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0a2a18",border:"1px solid #00c88730",borderRadius:9,padding:"8px 12px",marginBottom:6}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:16}}>📄</span>
-                          <div>
-                            <div style={{color:"#00e5a0",fontSize:12,fontWeight:600}}>{f.name}</div>
-                            <div style={{color:"#2a6a44",fontSize:10}}>{(f.size/1024).toFixed(1)} KB</div>
+                  <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={handleDrop} onClick={()=>fileRef.current.click()}
+                    style={{border:`2px dashed ${dragging?"#00a86b":"#c6d2db"}`,borderRadius:4,padding:"20px",textAlign:"center",cursor:"pointer",background:dragging?"#f0faf6":"#f5f7fa"}}>
+                    <div style={{fontSize:24,marginBottom:6}}>📁</div>
+                    <div style={{color:"#4a6572",fontSize:13}}>{dragging?"Drop files here!":"Drag & drop or click to browse"}</div>
+                    <div style={{color:"#8a9baa",fontSize:12,marginTop:4}}>PDF, DOCX, TXT supported</div>
+                    <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.txt,.doc" onChange={handleFileInput} style={{display:"none"}}/>
+                  </div>
+                  {files.length > 0 && (
+                    <div style={{marginTop:10}}>
+                      {files.map((f,i)=>(
+                        <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#f0faf6",border:"1px solid #b3deca",borderRadius:4,padding:"6px 12px",marginBottom:5}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span>📄</span>
+                            <div>
+                              <div style={{color:"#1b2a32",fontSize:13,fontWeight:600}}>{f.name}</div>
+                              <div style={{color:"#6b7c8a",fontSize:11}}>{(f.size/1024).toFixed(1)} KB</div>
+                            </div>
                           </div>
+                          <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16}}>✕</button>
                         </div>
-                        <button onClick={()=>removeFile(i)} style={{background:"none",border:"none",color:"#ff4d6d",cursor:"pointer",fontSize:16}}>✕</button>
-                      </div>
-                    ))}
-                    <div style={{color:"#00c887",fontSize:11,textAlign:"center",marginBottom:10}}>✓ {files.length} file{files.length>1?"s":""} ready — UpAI will read {files.length>1?"them":"it"}</div>
-                  </div>
-                )}
-
-                <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
-                  style={{width:"100%",background:(resolvedId||title||agency)?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:(resolvedId||title||agency)?"#001a10":"#2a5a78",border:"none",borderRadius:11,padding:14,fontWeight:800,fontSize:15,cursor:(resolvedId||title||agency)?"pointer":"not-allowed"}}>
-                  {files.length > 0 ? `✦ UpAI — Read ${files.length} File${files.length>1?"s":""} & Draft` : "✦ UpAI — Draft Proposal"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* READING PAGE PHASE */}
-        {phase==="readingPage" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
-            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#0088cc,#4fc3f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"pulse 1.5s infinite"}}>🌐</div>
-            <div style={{color:"#4fc3f7",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{pageReadingMsg}</div>
-            <div style={{display:"flex",gap:6}}>
-              {[0,1,2].map(i=>(
-                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#4fc3f7",animation:`pulse 1s ${i*0.3}s infinite`}}/>
-              ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{color:"#2a5a78",fontSize:12,textAlign:"center",maxWidth:300}}>UpAI is reading the SAM.gov contract page to understand the full requirements...</div>
+
+            <button onClick={generate} disabled={!resolvedId&&!title&&!agency}
+              style={{width:"100%",background:(resolvedId||title||agency)?"#1a6fb5":"#c6d2db",color:"#fff",border:"none",borderRadius:4,padding:"12px",fontWeight:700,fontSize:15,cursor:(resolvedId||title||agency)?"pointer":"not-allowed"}}>
+              {files.length>0?`✦ UpAI — Read ${files.length} File${files.length>1?"s":""} & Draft Proposal`:"✦ UpAI — Generate Proposal"}
+            </button>
+            {!resolvedId&&!title&&!agency && <div style={{color:"#6b7c8a",fontSize:12,textAlign:"center",marginTop:6}}>Enter at least one field above to continue</div>}
           </div>
         )}
 
-        {/* READING PHASE */}
-        {phase==="reading" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
-            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"pulse 1.5s infinite"}}>📄</div>
-            <div style={{color:"#00e5a0",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{readingMsg}</div>
-            <div style={{display:"flex",gap:6}}>
-              {[0,1,2].map(i=>(
-                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#00c887",animation:`pulse 1s ${i*0.3}s infinite`}}/>
-              ))}
+        {/* Progress phases */}
+        {["readingPage","reading","drafting","quality"].includes(phase) && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:16}}>
+            <div style={{width:60,height:60,borderRadius:"50%",background:phase==="readingPage"?"#1a6fb5":phase==="reading"?"#00a86b":phase==="drafting"?"#1b2a32":"#c45c00",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,animation:"pulse 1.5s infinite"}}>
+              {phase==="readingPage"?"🌐":phase==="reading"?"📄":phase==="drafting"?"✍️":"🔬"}
             </div>
-            <div style={{color:"#2a6a44",fontSize:12,textAlign:"center",maxWidth:300}}>UpAI is analyzing {files.length} attachment{files.length>1?"s":""} to build a tailored proposal...</div>
-          </div>
-        )}
-
-        {/* DRAFTING PHASE */}
-        {phase==="drafting" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
-            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#0088cc,#c084fc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"spin 3s linear infinite"}}>✍️</div>
-            <div style={{color:"#4fc3f7",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{draftingMsg}</div>
-            <div style={{display:"flex",gap:6}}>
-              {[0,1,2,3,4,5,6].map(i=>(
-                <div key={i} style={{width:6,height:6,borderRadius:"50%",background:i<3?"#00c887":"#1a3a5a",transition:"background 0.5s"}}/>
-              ))}
+            <div style={{color:"#1b2a32",fontSize:15,fontWeight:700,textAlign:"center"}}>
+              {phase==="readingPage"?pageReadingMsg:phase==="reading"?readingMsg:phase==="drafting"?draftingMsg:qualityMsg}
             </div>
-            <div style={{color:"#2a5a78",fontSize:12,textAlign:"center"}}>UpAI is crafting your winning proposal...</div>
-          </div>
-        )}
-
-        {/* QUALITY PHASE */}
-        {phase==="quality" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",gap:20}}>
-            <div style={{width:70,height:70,borderRadius:"50%",background:"linear-gradient(135deg,#f0c040,#ff8c42)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,animation:"pulse 1.5s infinite"}}>🔬</div>
-            <div style={{color:"#f0c040",fontSize:16,fontWeight:700,textAlign:"center",animation:"pulse 2s infinite"}}>{qualityMsg}</div>
             <div style={{display:"flex",gap:6}}>
-              {[0,1,2].map(i=>(
-                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#f0c040",animation:`pulse 1s ${i*0.3}s infinite`}}/>
-              ))}
+              {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#1a6fb5",animation:`pulse 1s ${i*0.3}s infinite`}}/>)}
             </div>
-            <div style={{color:"#6a5a2a",fontSize:12,textAlign:"center"}}>UpAI is running quality checks on your proposal...</div>
+            <div style={{color:"#6b7c8a",fontSize:13,textAlign:"center"}}>UpAI is working on your proposal...</div>
           </div>
         )}
 
-        {/* DONE PHASE */}
+        {/* Done */}
         {phase==="done" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto"}}>
-
-            {/* Quality Score Banner */}
-            {qualityScore !== null && (
-              <div style={{padding:"14px 20px",borderBottom:"1px solid #142a3e",background:"#050f1e",flexShrink:0}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            {qualityScore!==null && (
+              <div style={{padding:"14px 20px",borderBottom:"1px solid #e5eaee",background:"#f5f7fa",flexShrink:0}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}}>UpAI QUALITY REPORT</div>
+                  <div style={{color:"#1b2a32",fontSize:13,fontWeight:700}}>UpAI Quality Report</div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <div style={{color:scoreColor,fontSize:22,fontWeight:900}}>{qualityScore}%</div>
-                    <div style={{color:scoreColor,fontSize:12,fontWeight:700}}>{scoreLabel}</div>
+                    <div style={{background:scoreColor,color:"#fff",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700}}>
+                      {qualityScore>=80?"Strong":qualityScore>=60?"Good":"Needs Work"}
+                    </div>
                   </div>
                 </div>
-
-                {/* AI Checks */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5,marginBottom:12}}>
                   {qualityChecks.map((c,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:6,background:"#060f1c",borderRadius:8,padding:"6px 10px"}}>
-                      <span style={{fontSize:12,flexShrink:0}}>{statusIcon(c.status)}</span>
+                    <div key={i} style={{display:"flex",gap:6,background:"#fff",border:"1px solid #e5eaee",borderRadius:4,padding:"5px 8px"}}>
+                      <span style={{fontSize:12}}>{statusIcon(c.status)}</span>
                       <div>
-                        <div style={{color:statusColor(c.status),fontSize:11,fontWeight:600}}>{c.label}</div>
-                        <div style={{color:"#3a5a78",fontSize:10}}>{c.note}</div>
+                        <div style={{color:"#1b2a32",fontSize:11,fontWeight:600}}>{c.label}</div>
+                        <div style={{color:"#6b7c8a",fontSize:10}}>{c.note}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-
-                {/* Human Checklist */}
-                <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:1,marginBottom:8}}>👤 YOUR REVIEW CHECKLIST</div>
+                <div style={{color:"#1b2a32",fontSize:12,fontWeight:700,marginBottom:6}}>Your Review Checklist</div>
                 {humanChecks.map((c,i)=>(
                   <div key={i} onClick={()=>toggleHumanCheck(i)}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:8,cursor:"pointer",background:c.checked?"#0a2a18":"#060f1c",border:`1px solid ${c.checked?"#00c88740":"#132436"}`,marginBottom:5,transition:"all 0.2s"}}>
-                    <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${c.checked?"#00c887":"#2a5a78"}`,background:c.checked?"#00c887":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
-                      {c.checked && <span style={{color:"#001a10",fontSize:11,fontWeight:900}}>✓</span>}
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",cursor:"pointer",background:c.checked?"#f0faf6":"#fff",border:`1px solid ${c.checked?"#00a86b":"#e5eaee"}`,borderRadius:4,marginBottom:4}}>
+                    <div style={{width:16,height:16,border:`2px solid ${c.checked?"#00a86b":"#6b7c8a"}`,background:c.checked?"#00a86b":"#fff",borderRadius:2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {c.checked&&<span style={{color:"#fff",fontSize:10,fontWeight:900}}>✓</span>}
                     </div>
-                    <span style={{color:c.checked?"#00e5a0":"#5a8aaa",fontSize:12}}>{c.label}</span>
+                    <span style={{color:"#1b2a32",fontSize:13}}>{c.label}</span>
                   </div>
                 ))}
-
                 {humanDone && (
-                  <div style={{marginTop:10,background:"linear-gradient(135deg,#0a2a18,#0a3a20)",border:"1px solid #00c88750",borderRadius:10,padding:"10px 14px",textAlign:"center",animation:"slideUp 0.3s ease"}}>
-                    <div style={{color:"#00e5a0",fontSize:13,fontWeight:700}}>🎉 UpAI says: You're ready to submit!</div>
+                  <div style={{marginTop:8,background:"#f0faf6",border:"1px solid #00a86b",borderRadius:4,padding:"8px 12px",textAlign:"center"}}>
+                    <div style={{color:"#00a86b",fontSize:13,fontWeight:700}}>🎉 UpAI says: You're ready to submit!</div>
                   </div>
                 )}
               </div>
             )}
-
-            {/* Proposal Text */}
             <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
-              <pre style={{color:"#b8d4ec",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'IBM Plex Mono',monospace"}}>{proposal}</pre>
+              <pre style={{color:"#1b2a32",fontSize:13,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"'Source Sans 3',sans-serif"}}>{proposal}</pre>
             </div>
           </div>
         )}
 
-        {/* Footer Buttons */}
         {phase==="done" && (
-          <div style={{padding:"12px 20px",borderTop:"1px solid #142a3e",display:"flex",gap:10,flexShrink:0}}>
-            <button onClick={()=>navigator.clipboard.writeText(proposal)} style={{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>📋 Copy</button>
-            <button onClick={()=>{setPhase("input");setProposal("");setQualityScore(null);setQualityChecks([]);setHumanChecks([]);}} style={{background:"#0a2030",color:"#6a8aa8",border:"1px solid #142a3e",borderRadius:10,padding:"9px 16px",fontWeight:600,fontSize:12,cursor:"pointer"}}>↺ Redo</button>
-            {saved && <span style={{color:"#00c887",fontSize:11,display:"flex",alignItems:"center",gap:4}}>💾 Auto-saved</span>}
-            <button onClick={onClose} style={{marginLeft:"auto",background:humanDone?"linear-gradient(135deg,#00c887,#009966)":"linear-gradient(135deg,#0088cc,#0066aa)",color:"#001a10",border:"none",borderRadius:10,padding:"9px 22px",fontWeight:800,fontSize:13,cursor:"pointer"}}>
-              {humanDone ? "✅ Submit Ready!" : "Done ✓"}
+          <div style={{padding:"12px 20px",borderTop:"1px solid #e5eaee",display:"flex",gap:8,flexShrink:0,background:"#f5f7fa"}}>
+            <button onClick={()=>navigator.clipboard.writeText(proposal)} style={{background:"#fff",color:"#1a6fb5",border:"1px solid #1a6fb5",borderRadius:4,padding:"7px 14px",fontWeight:700,fontSize:13,cursor:"pointer"}}>📋 Copy</button>
+            <button onClick={()=>{setPhase("input");setProposal("");setQualityScore(null);setQualityChecks([]);setHumanChecks([]);}} style={{background:"#fff",color:"#6b7c8a",border:"1px solid #c6d2db",borderRadius:4,padding:"7px 14px",fontWeight:700,fontSize:13,cursor:"pointer"}}>↺ Redo</button>
+            {saved && <span style={{color:"#00a86b",fontSize:12,display:"flex",alignItems:"center",gap:4}}>💾 Auto-saved to browser</span>}
+            <button onClick={onClose} style={{marginLeft:"auto",background:humanDone?"#00a86b":"#1a6fb5",color:"#fff",border:"none",borderRadius:4,padding:"7px 20px",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+              {humanDone?"✅ Submit Ready!":"Done"}
             </button>
           </div>
         )}
@@ -630,49 +412,50 @@ ${full.slice(0, 3000)}`;
 }
 
 function CategoryCard({cat, onDraft}) {
-  const c = cat.accentColor;
+  const c = cat.color;
   return (
-    <div style={{background:"linear-gradient(135deg,#0d1f30,#0f2438)",border:`1px solid ${c}22`,borderRadius:16,marginBottom:16,overflow:"hidden",boxShadow:`0 2px 20px ${c}10`}}>
-      <div style={{padding:"18px 20px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-          <div>
-            <div style={{fontSize:26,marginBottom:4}}>{cat.icon}</div>
-            <div style={{color:"#ddeeff",fontSize:18,fontWeight:700,fontFamily:"'DM Serif Display',Georgia,serif"}}>{cat.label}</div>
-            <div style={{color:"#5a8aaa",fontSize:12,lineHeight:1.5,marginTop:5,maxWidth:460}}>{cat.description}</div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end",flexShrink:0,marginLeft:12}}>
-            <span style={{background:"#0a2030",border:"1px solid #1a4060",color:"#4fc3f7",fontSize:9,padding:"3px 8px",borderRadius:10,fontWeight:700}}>ACTIVE</span>
-            <span style={{background:"#0a2030",border:"1px solid #1a4060",color:"#4fc3f7",fontSize:9,padding:"3px 8px",borderRadius:10,fontWeight:700}}>🇺🇸 USA</span>
-          </div>
+    <div style={{background:"#fff",border:"1px solid #c6d2db",borderRadius:4,marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+      {/* Header */}
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #e5eaee",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#f5f7fa"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>{cat.icon}</span>
+          <span style={{color:"#1b2a32",fontSize:15,fontWeight:700}}>{cat.label}</span>
         </div>
-        <div style={{borderTop:`1px solid ${c}20`,marginBottom:12}}/>
+        <div style={{display:"flex",gap:6}}>
+          <span style={{background:"#e8f5f0",color:"#00a86b",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,border:"1px solid #b3deca"}}>● Active</span>
+          <span style={{background:"#e8f0f8",color:"#1a6fb5",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,border:"1px solid #b3cde8"}}>🇺🇸 USA</span>
+        </div>
+      </div>
+      {/* Description */}
+      <div style={{padding:"8px 16px",borderBottom:"1px solid #e5eaee"}}>
+        <p style={{color:"#4a6572",fontSize:13}}>{cat.description}</p>
+      </div>
+      {/* NAICS rows */}
+      <div style={{padding:"8px 16px 12px"}}>
         {cat.naicsRows.map((row,i)=>(
-          <div key={i} style={{marginBottom:i<cat.naicsRows.length-1?10:0,background:"#060f1c",borderRadius:12,padding:"12px 14px",display:"flex",gap:12,alignItems:"stretch"}}>
-            {/* Left - NAICS label */}
+          <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:"10px 0",borderBottom:i<cat.naicsRows.length-1?"1px solid #e5eaee":"none"}}>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{color:c,fontSize:11,fontWeight:700,lineHeight:1.4}}>{row.label}</div>
-              <div style={{color:"#2a5a78",fontSize:9,marginTop:2}}>keyword: {row.bestKw}</div>
+              <div style={{color:c,fontSize:19,fontWeight:700}}>{"NAICS " + row.label}</div>
             </div>
-            {/* Right - 3 action buttons stacked */}
-            <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0,width:190}}>
+            <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,width:210}}>
               <a href={makeUrl(row.sector,row.naics,row.bestKw)} target="_blank" rel="noopener noreferrer"
-                style={{background:`linear-gradient(135deg,${c}22,${c}11)`,color:c,border:`1px solid ${c}50`,borderRadius:8,padding:"7px 10px",fontSize:10,fontWeight:700,textDecoration:"none",textAlign:"center",display:"block"}}>
-                🎯 Potential Contracts for UPVERSION
+                style={{background:c,color:"#fff",borderRadius:4,padding:"7px 12px",fontSize:12,fontWeight:700,textDecoration:"none",textAlign:"center",display:"block",boxShadow:`0 2px 8px ${c}55`}}>
+                🎯 Contracts
               </a>
               <button onClick={()=>onDraft(row,cat)}
-                style={{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:8,padding:"7px 10px",fontSize:10,fontWeight:700,cursor:"pointer",textAlign:"center"}}>
-                ✦ Create Draft for UPVERSION
+                style={{background:"#1a6fb5",color:"#fff",border:"none",borderRadius:4,padding:"7px 12px",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px #1a6fb555"}}>
+                ✦ Draft
               </button>
               <a href={makeAwardUrl(row.sector,row.naics)} target="_blank" rel="noopener noreferrer"
-                style={{background:"#1a0a2e",color:"#c084fc",border:"1px solid #c084fc50",borderRadius:8,padding:"7px 10px",fontSize:10,fontWeight:700,textDecoration:"none",textAlign:"center",display:"block"}}>
-                🏆 Competitor Award Winners
+                style={{background:"#f5f0ff",color:"#6b21a8",border:"1px solid #d8b4fe",borderRadius:4,padding:"7px 12px",fontSize:12,fontWeight:700,textDecoration:"none",textAlign:"center",display:"block"}}>
+                🏆 Winners
               </a>
             </div>
           </div>
         ))}
-        <div style={{marginTop:12,color:"#2a5a78",fontSize:10}}>
-          💡 After Best Match, filter on SAM.gov: Set Aside → Small Business
-        </div>
+      </div>
+      <div style={{padding:"6px 16px 10px",borderTop:"1px solid #e5eaee"}}>
+        <p style={{color:"#8a9baa",fontSize:11}}>💡 After opening SAM.gov, filter by: Set Aside → Small Business</p>
       </div>
     </div>
   );
@@ -681,75 +464,64 @@ function CategoryCard({cat, onDraft}) {
 function App() {
   const [draftInfo, setDraftInfo] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
-
-  // Check for auto-saved proposal on load
-  const [hasSaved, setHasSaved] = React.useState(false);
   const [showRestoreBar, setShowRestoreBar] = React.useState(false);
+
   React.useEffect(()=>{
-    const saved = localStorage.getItem("upai_last_proposal");
-    if (saved) { setHasSaved(true); setShowRestoreBar(true); }
+    if (localStorage.getItem("upai_last_proposal")) setShowRestoreBar(true);
   },[]);
 
   const filtered = activeTab==="all" ? CATEGORIES : CATEGORIES.filter(c=>c.id===activeTab);
 
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#020c18 0%,#040e1e 50%,#020a14 100%)"}}>
-      {/* Header */}
-      <div style={{background:"rgba(4,14,30,0.96)",backdropFilter:"blur(14px)",borderBottom:"1px solid #0e2034",padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:34,height:34,borderRadius:8,background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:13,color:"#001a10"}}>UV</div>
-          <div>
-            <div style={{fontFamily:"'DM Serif Display',Georgia,serif",fontSize:17}}>UPVERSION LLC</div>
-            <div style={{fontSize:9,color:"#2a6a8a",letterSpacing:1.5,fontWeight:700}}>SAM.GOV · POWERED BY UpAI</div>
+    <div style={{minHeight:"100vh",background:"#f5f7fa"}}>
+      {/* SAM.gov style header */}
+      <div style={{background:"#1b2a32",borderBottom:"4px solid #c45c00"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:16}}>
+            {/* Logo image */}
+            <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAD3BEIDASIAAhEBAxEB/8QAGgABAQADAQEAAAAAAAAAAAAAAAEEBQYDAv/EABgBAQEBAQEAAAAAAAAAAAAAAAABAgME/9oADAMBAAIQAxAAAALQRSUEoASiLCgJQlCUEKACUJQJQgoAACEoUCUABCpQQqUAAJQCVCgAAiiKEsSpVSgAlAAACUlgoJQAAlBFJQAAikBQACUQKAAAAAAAAAACWUAEKAAlACUAAEKAQoIoJQAAAAAAQoJZQlAJQAAAAAAAlACUEoAAlAAAAACBLKUAAAAAAACBLKUAAlAJYShQAJQlQqUAASgCUACCgSgAACUIEqFoAAAACUShKJQRSUAIsKlBCkKAQsUAikBZQASxKRaCKAABAoAAAAAAJRAKQFAAEKlIoEFAAAlAAAAEoEKBKIsKAQoCBQJQAAAlCUAlBLCkKAlJQRQgoAACUAAAAikSxagoCCxRLCgiiWAsQsWgAIKlAABCywqCpQCKQFAASwFAAIsKAAlACUAEKAlEoQFlAAJUKBAFICygCBLLFUBCpQQoJYLFBCglAQWCgAAlgqUSgCUJYKABKJQISylJQAQqUISkVYSxVSiUCCgAAIFlCUASgAlAIoAAAiwssCiVD6ZXtnvrpl4l5WFzUpFEsyprHbDynXDRrhZQSoSqABKBKARRAllKAlCUkWKUSgQUABBUoAlEUQBYLKCFlBKRQlAhUFgAWCLKAoAAAEBQCFBNlrtob7ju84Q+YpCjseO7w5fVbrTBKbPoOVzzdtJTdTTDdeWr2RosDuuIPhB9Z2v951y8HO+M98CpvxWCrKn3nefpn2TB9fC8kW8XSc3sTomlpuWlG6aWGRz+w14lHv1nIbY3LSjdNKN156nYmm13d8QecUZ+D3Bie2PrDdTS03V0g2HLbTVFSk7Hj+6OY1e504IXc+HVmH967FN1NL9G58dZszQYPdcUeUUddyPbmr53vNOcysGZiZx0nJ9vxRjgAlBZkzTxzvGd8MuvLPbxy508/DMxFJbziiVCgAJQAQu11W1Oo4Tu+EPkhQO74TvDm9PudKliqeuSYMzhhM0YOb9bU3XG9jxB4gUM30wM7PrxfDYYN4/Ni8b7eWdO318fWFO/xLNeIVZW/TQOrLybrByjq6cm3ejBUPrLXCZwwZnjBy/vaG743seJPEh7dxwXYnP63uMQ5N1dOSdZ5HMszCFlHdcL3Rzun3GmKlOi2GBmnHygBkY3sdxyXW8oa0he34jtjX7PQ4JuuZ7jXHLZ2FmnYcT23FGOCFCUbDGyM+nz9tdnGF85WNeEy8TLauHmYarLeMUqWFAQUAEoTa6vaHU8L3XDHnFIsS95wndrzmm3OmEU2vUcx0xbwcO8cGO8+OGhutLKAJYjKxfqb2Hj6fWfZrp6XXi9vd859vji/XzrxrLcgNvqIdE54dC54dFOeG11UoBk9pxfaBx+Ed64L1O48pqzF0tEsD28hvPXnR0Tnh0OdyGYdbxHd8YYoHdcL3Rzun2+nKDos7B2BxpAsL6+OSdryfWcka9Be34jtjR6Td6UzOt4bNN9zvY4Rlcf6eB5KIBZ6rleORiZ9Pjkz5vHM12wxZ18MvEy7y+sLNwmhbwhVIKAAAACe3kO6w9BvDA1fT6s8Mj52x5bLXaYx8QEo2vTcrvTkSFSkoAARQB6ZutzM9/p6J3Yfvh3iRrzqCUNpquhPK7SGsbMaxsxotbv9AJRkdrxPUHOYWVjBKbDrOC3h5ajruXPFSNvqOnXEbMaxsxrc70+DP4jM14BO64brDV6fZawUNl1fA7gzsbZU5PcYu0MbZXxNhxWRhiUO24nqTB0m01YSmZ1vC5x0PJ9Zy54AVC5uFkTr94n38MhcZPrh+2e+PlY33efvh+/gthedAlAEUAAShFJLKpBQAIpAUgWIWKCUKABFI+vguxYFz6Hwa84JQpKCFQVKEolECULFCUSyghZYUABCVKssoliUi0EUSiCLUqELUoAAlEoSgIFiUKlBCVC0ABCULKhQAASgABLKkWKUJRKEsolBKASgIUAAABKASypKi0CUJRAiopQikqFAQFhZYiwVKqWBYUhUFAIWBQAAAASgAAlCUAASggLKASoWUAEpFiULKAAAAAABKAJQABKAhQAASoUAhQAAJYlItAAIKAAhQACFlACURRAUEoEolAAAEsJQoAAAAAAEoAJRAlCgSglACWFABKgoAAAASgAIUAhQAAAEoAAAAAAAAlCUSoUACUAJQAAAAAAlCUAAAARYllirBUFAAAABLBQAAAAAAAAARQSghQSgAAlAAEUAAJQSgABKAEFAAAAAAAABCoCgEoSkUgKAAAABFiUi0AhQAJYUAACUCFSiURYCgBKAARQAAAAAAAABFAAAAAAAAAECUKAAAAAAAABKJKLAlCgAASiAsCUKglCgAAAAAIIosoSgBAiigQJYLQAAASgABAlCgAAIFAAAAgUAEoAAASiAoAH/9oADAMBAAIAAwAAACFiBABDQAgggQACCAgwAAA0ACAAQgQgAAgCQAADDBUhAAgAAAiwCAACBiAADEAAAhwAAAAAAAAAACgAQAAgAgAAQAQDAgAAAAAAQCggCAAAAAAACACBAACAAAAAD1AAAAAAAAD1AAAgC0AACCQgABACAAwBAAACD0wAAAAAhBCBiADQgQQARgDECABUQDAAATAAAAAAAhzEAAAQjASAAAgAAABAQBDQAQAyAgAAAggCBQQAiBgwAAAgAAADFQwAxhQDCzXQAAwgAARQwgDEAABTgADQAAgAgAQAhBygACQBzjxAD1SAQgQCxgQCASwAACwhACCwABCA1AgAQg0S1hCAwAAAyggBAAgDAAADRTCRb9wjDqsxAkgACAgDD1ABBHTCAwAAwgBDDzSgRAjBAQxzx2kAAAADwAQCRxjhjAgzxhCQxlKVyk2BgDCQShDABxSBgiDgAQiDgRyDhAhgyzTyAACBeHnvkjCQAAgAQCAQBCVgBwySjzA3y01BXiETAAzkQBQxwTDBjwSgQQzDAAigSSTzxADgiwnPn2nBQAwACCChjWgBjyQiwgBWqxtb6gATBACgBTwTzCyDyABAAwwCyTRiwyzAQBzDyz2121TngwAAAADCSSAABBAQiAADAC/HIyBAySgTBCBghjDEQwhggDSSAwADxhBQAizjyQgKAd/RwBADAACDGgwABjwTXT0AADF3v30AgQwghD0DBCgRQAA0ihUQDCEQkwgABCCATUBA0wAA0CQAACAACnTBCChAgCAQAAAAgCmQBBD2TBiQAzRW0hTQQwARwAAAACAABBAACBygCRAAjUCAAAAAAAgBAACAQAACQAQAABUQAASAAQAARABDDwCAhAAAC0AAAAAAACABD0ACBABQACSAAAACAAQAQAAAAgAAAAAAABBCQABABAAAAAABBAAAADVSwwAAAACwAAAAAAAAADAgQCAABAADAABAgAAgAwAAAAAAAADkAAgjEAAAAADUQAQABQAABAQhDTgAgADAAAAAAAAADAAAAAAAAAD0AAAAAAAAACGD0AAACED0B0AAAAAAB2CCAD2AD1wAAACAAD0AAABwAAABwACAAACEAAD/2gAMAwEAAgADAAAAEGIEAENACCCBAAIICDAAADQAIABCBCAACAJAAAMMFSEACAAACLAIAAIGIAAEwAACHAgAgAgAAAAAKABAACACAABABAMCAAAAAABAKCAIAAAAAAAIAIEAAIAgAAAPUgAAAAAAAP0AACAqQAAIJCAAEAIADAEAAAIPTAAAAACEEIGIANCBBABGAMQIAFRAMAABMAAgAgAimMwgABishIAACAAAAEBAENABADICAAACCAIFBACIGDAAACAAAAMVDADGFAMLN9AADCgABlDigMwAAlOAANAACACABACEHKAAJAHOPEAPVIBCBALGBAIBLAAALCEAILgAEIB0CABCCxD2EIjAAgjKCAEACAMAgBPFMJM1HCMKljkCSAAICAOP0AEE9MIDCADCDmMPNKBEAsEBDHvkYwAAAAvgBANMGOFODHMNNBCnLrXI0WGDACHLMDNKNLGADDLDKNEBCIGOFOACPNiAAIEBu+GispggiABBCBAEJeGGFLADIAMb1LN+r2OMDGwoGPOBgICPDKuJGBGAPEBDELPHgOCP++K/I8lgjgAIPBGJ0AHMJIJOAEW44gB4gFMOECAFBIFGLKPIOHAMLENLNiFDhEGELEvLKKNj3M+jggAAAMKKMCCENLCIAAMEKvyTIEJMELBAGEGPHM0OLGDAOFIOMEDIsHAGCOPJhYYFid3gEgMgAIMaDAIGPhNdPQAAMTKHPQCBPCGEPUMEKFFgMLaKBVAMAZCzigEEIopNwEjzgAAwpgggoAAK9MEIKECAIBAAAACACZAEEPZMGJADNFbSFNBDABHAAAAAoAAEEkAoHqgJEgitwoggggAACAEAAIBAAAJABAAAERAABIABAABEAEMPAICEAAALwAAAAAAAIgEPwAoEIFAgJoggggoABABAAAACAAAAAAAAEEJAAEAEAAAAAAEEAAgAtVLDAAAAALgAAggAgAgAsChAoggkggsgAECA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" alt="UPVERSION AI" style={{height:40,width:"auto",objectFit:"contain"}}/>
+            <div style={{width:1,height:36,background:"#ffffff30"}}/>
+            <div>
+              <div style={{color:"#fff",fontSize:21,fontWeight:700,fontFamily:"'Merriweather',Georgia,serif",letterSpacing:0.3}}>UPVERSION LLC</div>
+              <div style={{color:"#8aaabb",fontSize:12,letterSpacing:1.5,fontWeight:600}}>CONTRACT INTELLIGENCE · POWERED BY UpAI</div>
+            </div>
           </div>
-        </div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {hasSaved && (
-            <button onClick={()=>{
-              const s = localStorage.getItem("upai_last_proposal");
-              if (s) { const d = JSON.parse(s); alert("Last saved: " + d.savedAt + "\nTitle: " + (d.title||"N/A") + "\nNAICS: " + d.naics); }
-            }} style={{background:"#0a2a18",border:"1px solid #00c88730",color:"#00c887",fontSize:10,padding:"3px 10px",borderRadius:10,cursor:"pointer",fontWeight:700}}>
-              💾 Saved
-            </button>
-          )}
-          {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#00c88712",border:"1px solid #00c88728",color:"#00e5a0",fontSize:9,padding:"2px 8px",borderRadius:12,fontWeight:700}}>{c}</span>)}
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {["MBE","SBE","NJ"].map(c=><span key={c} style={{background:"#ffffff18",color:"#fff",fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,border:"1px solid #ffffff30"}}>{c}</span>)}
+            {localStorage.getItem("upai_last_proposal") && (
+              <button onClick={()=>setShowRestoreBar(s=>!s)} style={{background:"#00a86b",color:"#fff",border:"none",borderRadius:4,padding:"4px 10px",fontWeight:700,fontSize:11,cursor:"pointer"}}>💾 Saved</button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Restore bar */}
+      {/* Red banner like SAM.gov alerts */}
       {showRestoreBar && (
-        <div style={{background:"linear-gradient(135deg,#0a2a18,#0a3a20)",borderBottom:"1px solid #00c88730",padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{color:"#00e5a0",fontSize:12}}>💾 UpAI has a saved proposal from your last session!</span>
+        <div style={{background:"#fff8e1",borderBottom:"1px solid #ffe082",padding:"8px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:"#5d4037",fontSize:13}}>💾 UpAI has a saved proposal from your last session.</span>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{
-              const s = localStorage.getItem("upai_last_proposal");
-              if (s) { const d = JSON.parse(s); navigator.clipboard.writeText(d.proposal); alert("Copied to clipboard!"); }
-            }} style={{background:"#00c887",color:"#001a10",border:"none",borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:11,cursor:"pointer"}}>Copy Saved</button>
-            <button onClick={()=>setShowRestoreBar(false)} style={{background:"none",border:"1px solid #00c88730",color:"#00c887",borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:11,cursor:"pointer"}}>Dismiss</button>
+            <button onClick={()=>{const s=localStorage.getItem("upai_last_proposal");if(s){navigator.clipboard.writeText(JSON.parse(s).proposal);alert("Copied!");}}} style={{background:"#fff",color:"#1a6fb5",border:"1px solid #1a6fb5",borderRadius:4,padding:"4px 12px",fontWeight:700,fontSize:12,cursor:"pointer"}}>Copy Saved</button>
+            <button onClick={()=>setShowRestoreBar(false)} style={{background:"none",border:"none",color:"#6b7c8a",fontSize:13,cursor:"pointer"}}>✕</button>
           </div>
         </div>
       )}
 
-      <div style={{maxWidth:860,margin:"0 auto",padding:"20px 16px"}}>
-
-        {/* Company Card */}
-        <div style={{background:"linear-gradient(135deg,#0c1c2e,#0a1a28)",border:"1px solid #132436",borderRadius:16,padding:"16px 20px",marginBottom:18}}>
-          <div style={{color:"#2a6a8a",fontSize:10,fontWeight:700,letterSpacing:2,marginBottom:10}}>REGISTERED ENTITY</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"8px 16px"}}>
-            {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Expertise","Biotech Manufacturing Trainer"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v])=>(
-              <div key={k}>
-                <div style={{color:"#2a5a78",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:2}}>{k}</div>
-                <div style={{color:"#9abcd4",fontSize:12}}>{v}</div>
-              </div>
-            ))}
-          </div>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"20px"}}>
+        {/* Company info bar */}
+        <div style={{background:"#fff",border:"1px solid #c6d2db",borderRadius:4,padding:"14px 20px",marginBottom:16,display:"flex",flexWrap:"wrap",gap:"12px 30px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          {[["UEI","Q1KPWH41NC57"],["CAGE","16LF8"],["President","Mahezabin Tai"],["Location","Piscataway, NJ"],["Certifications","MBE · SBE · Asian-Pacific"]].map(([k,v])=>(
+            <div key={k}>
+              <div style={{color:"#6b7c8a",fontSize:11,fontWeight:700,letterSpacing:1}}>{k}</div>
+              <div style={{color:"#1b2a32",fontSize:13,fontWeight:600}}>{v}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Tabs */}
-        <div style={{display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"}}>
+        {/* Tabs — SAM.gov style */}
+        <div style={{display:"flex",gap:0,marginBottom:16,borderBottom:"2px solid #c6d2db",flexWrap:"wrap"}}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setActiveTab(t.id)}
-              style={{background:activeTab===t.id?"linear-gradient(135deg,#00c887,#0088cc)":"#0a1a28",color:activeTab===t.id?"#001a10":"#4a8aaa",border:activeTab===t.id?"none":"1px solid #132436",borderRadius:20,padding:"8px 18px",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              style={{background:"none",border:"none",borderBottom:activeTab===t.id?"3px solid #1a6fb5":"3px solid transparent",color:activeTab===t.id?"#1a6fb5":"#4a6572",padding:"8px 16px",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:-2,whiteSpace:"nowrap"}}>
               {t.label}
             </button>
           ))}
@@ -758,28 +530,24 @@ function App() {
         {filtered.map(cat=><CategoryCard key={cat.id} cat={cat} onDraft={(row,c)=>setDraftInfo({row,cat:c})}/>)}
 
         {/* How to use */}
-        <div style={{background:"linear-gradient(135deg,#0a1e10,#081a0e)",border:"1px solid #0a3a1a",borderRadius:16,padding:"18px 20px",marginTop:8}}>
-          <div style={{color:"#00c887",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:12}}>📋 HOW UpAI WORKS</div>
-          {[
-            ["⭐","Best Match","Opens SAM.gov with NAICS + keyword — USA only, targeted results"],
-            ["✦","Draft","Enter Notice ID or URL, upload attachments, UpAI reads & drafts your proposal"],
-            ["🔬","Quality Check","UpAI scores your proposal and flags issues. You complete the human checklist."],
-            ["💾","Auto-Save","UpAI saves every proposal automatically — never lose your work!"],
-            ["🏆","Past Awards","See who won contracts in your NAICS — learn from the winners"],
-          ].map(([icon,t,d])=>(
-            <div key={t} style={{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start"}}>
-              <div style={{width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0}}>{icon}</div>
-              <div>
-                <div style={{color:"#00e5a0",fontSize:13,fontWeight:700,marginBottom:2}}>{t}</div>
-                <div style={{color:"#2a6a44",fontSize:12,lineHeight:1.5}}>{d}</div>
+        <div style={{background:"#fff",border:"1px solid #c6d2db",borderRadius:4,padding:"16px 20px",marginTop:8,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{color:"#1b2a32",fontSize:13,fontWeight:700,marginBottom:12,borderBottom:"1px solid #e5eaee",paddingBottom:8}}>How UpAI Works</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12}}>
+            {[["🎯","Potential Contracts","Opens SAM.gov filtered to your NAICS + keyword — USA only"],["✦","Create DRAFT","Enter Notice ID or URL, upload attachments, UpAI drafts your proposal"],["🔬","Quality Check","UpAI scores and flags issues. Complete human checklist before submitting."],["💾","Auto-Save","Every proposal saved to your browser automatically"],["🏆","Past Award Winners","See who won similar contracts — learn from the competition"]].map(([icon,t,d])=>(
+              <div key={t} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{width:28,height:28,borderRadius:4,background:"#e8f0f8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{icon}</div>
+                <div>
+                  <div style={{color:"#1b2a32",fontSize:13,fontWeight:700}}>{t}</div>
+                  <div style={{color:"#6b7c8a",fontSize:12,lineHeight:1.5}}>{d}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{textAlign:"center",padding:"20px",color:"#0e2a40",fontSize:11,borderTop:"1px solid #0a1e30",marginTop:20}}>
-        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Powered by UpAI + SAM.gov
+      <div style={{textAlign:"center",padding:"16px",color:"#8a9baa",fontSize:11,borderTop:"1px solid #e5eaee",marginTop:20,background:"#fff"}}>
+        UPVERSION LLC · UEI Q1KPWH41NC57 · Piscataway, NJ · Contract Intelligence powered by UpAI + SAM.gov
       </div>
 
       {draftInfo && <ProposalModal row={draftInfo.row} cat={draftInfo.cat} onClose={()=>setDraftInfo(null)}/>}
