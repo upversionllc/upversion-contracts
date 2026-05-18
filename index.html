@@ -111,6 +111,8 @@ const TABS = [
   {id:"it",label:"IT Training"},
   {id:"marketing",label:"Marketing"},
   {id:"management",label:"Management"},
+  {id:"agents",label:"UpAI Agents (View)"},
+  {id:"pipeline",label:"UpAI Agents Pipeline"},
 ];
 
 const PAGE_MSGS = ["Opening SAM.gov page...","Reading contract details...","Scanning requirements...","Page read complete!"];
@@ -484,6 +486,341 @@ function CategoryCard({cat, onDraft}) {
   );
 }
 
+function AgentsView() {
+  var s1=React.useState("611519"),naicsFilter=s1[0],setNaicsFilter=s1[1];
+  var s2=React.useState("pharmaceutical"),keyword=s2[0],setKeyword=s2[1];
+  var s3=React.useState("idle"),phase=s3[0],setPhase=s3[1];
+  var s4=React.useState(""),msg=s4[0],setMsg=s4[1];
+  var s5=React.useState([]),results=s5[0],setResults=s5[1];
+  var NAICS=[
+    {code:"611519",sector:"61",label:"611519 - Pharma Technical Training",kw:"pharmaceutical"},
+    {code:"541714",sector:"54",label:"541714 - R&D in Biotechnology",kw:"biotechnology"},
+    {code:"541715",sector:"54",label:"541715 - Life Sciences",kw:"life sciences"},
+    {code:"611420",sector:"61",label:"611420 - Computer Training",kw:"training"},
+    {code:"541613",sector:"54",label:"541613 - Marketing Consulting",kw:"marketing services"},
+    {code:"611430",sector:"61",label:"611430 - Management Training",kw:"management training"},
+    {code:"541611",sector:"54",label:"541611 - Admin Consulting",kw:"management consulting"},
+  ];
+  var selN=NAICS.find(function(n){return n.code===naicsFilter;})||NAICS[0];
+  var E=React.createElement;
+
+  function scout(){
+    setPhase("scouting");setResults([]);
+    setMsg("Scout searching SAM.gov for "+selN.label+"...");
+    fetch("https://upversion-contracts.vercel.app/api/sam?naics="+naicsFilter+"&keyword="+encodeURIComponent(keyword)+"&limit=10")
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var ops=[];
+        if(d&&d.opportunitiesData&&d.opportunitiesData.length>0){
+          ops=d.opportunitiesData.map(function(o){return{noticeId:o.solicitationNumber||"N/A",title:o.title||"Untitled",agency:o.fullParentPathName||"Federal Agency",deadline:o.responseDeadLine||"See SAM.gov",url:"https://sam.gov/opp/"+(o.id||"")+"/view",type:o.type||"Opportunity"};});
+        }
+        if(ops.length===0){
+          setMsg("No API results. Use the Contracts button on the main tab to search SAM.gov directly.");
+          setResults([]);
+        }else{
+          setMsg("Scout found "+ops.length+" opportunities!");
+          setResults(ops);
+        }
+        setPhase("idle");
+      })
+      .catch(function(){
+        setMsg("SAM.gov API unavailable. Use the Contracts button on main tabs to search directly.");
+        setPhase("idle");
+      });
+  }
+
+  var inp={width:"100%",background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:8,color:"#ddeeff",fontSize:12,outline:"none",marginBottom:8};
+
+  return E("div",{style:{background:"#111f2e",border:"1px solid #1a3a5a",borderRadius:8,padding:20}},
+    E("div",{style:{color:"#ddeeff",fontSize:18,fontWeight:700,marginBottom:4}},"UpAI Scout Agent"),
+    E("div",{style:{color:"#4a6a8a",fontSize:12,marginBottom:20}},"Search SAM.gov for active contracts matching your NAICS. Then use Agents Pipeline to draft a proposal."),
+
+    E("div",{style:{background:"#0a1628",border:"1px solid #1a3a5a",borderRadius:8,padding:14,marginBottom:14}},
+      E("div",{style:{color:"#00c887",fontSize:11,fontWeight:700,marginBottom:10}},"CONFIGURE SEARCH"),
+      E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"NAICS CODE"),
+      E("select",{value:naicsFilter,onChange:function(e){setNaicsFilter(e.target.value);var f=NAICS.find(function(n){return n.code===e.target.value;});if(f)setKeyword(f.kw);},style:inp},
+        NAICS.map(function(n){return E("option",{key:n.code,value:n.code},n.label);})
+      ),
+      E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"KEYWORD"),
+      E("input",{value:keyword,onChange:function(e){setKeyword(e.target.value);},style:inp}),
+      E("button",{onClick:scout,disabled:phase!=="idle",style:{width:"100%",background:phase!=="idle"?"#0a2030":"linear-gradient(135deg,#00c887,#0088cc)",color:phase!=="idle"?"#2a5a78":"#001a10",border:"none",borderRadius:8,padding:10,fontWeight:800,fontSize:13,cursor:phase!=="idle"?"not-allowed":"pointer"}},
+        phase==="scouting"?"Scouting...":"Run Scout Agent")
+    ),
+
+    phase!=="idle"&&E("div",{style:{background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:8,padding:10,marginBottom:14,color:"#00c887",fontSize:13}},msg),
+
+    results.length>0&&E("div",null,
+      E("div",{style:{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:8}},"RESULTS — Copy a URL and paste into Agents Pipeline to draft a proposal"),
+      results.map(function(c,i){
+        return E("div",{key:i,style:{background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:8,padding:12,marginBottom:8}},
+          E("div",{style:{color:"#ddeeff",fontSize:13,fontWeight:700,marginBottom:4}},c.title),
+          E("div",{style:{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}},
+            E("span",{style:{color:"#4fc3f7",fontSize:11}},"ID: "+c.noticeId),
+            E("span",{style:{color:"#4a6a8a",fontSize:11}},c.agency),
+            E("span",{style:{color:"#f0c040",fontSize:11}},"Deadline: "+c.deadline)
+          ),
+          E("div",{style:{display:"flex",gap:8}},
+            E("a",{href:c.url,target:"_blank",rel:"noopener noreferrer",style:{background:"#1a6fb5",color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:700,textDecoration:"none"}},"View on SAM.gov"),
+            E("button",{onClick:function(){navigator.clipboard.writeText(c.url);},style:{background:"#0a2030",color:"#00c887",border:"1px solid #00c88740",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}},"Copy URL"),
+            E("span",{style:{color:"#4a6a8a",fontSize:10,display:"flex",alignItems:"center"}},"← then paste in Agents Pipeline")
+          )
+        );
+      })
+    ),
+
+    phase==="idle"&&results.length===0&&E("div",{style:{background:"#0a1628",border:"1px solid #1a3a5a",borderRadius:8,padding:14}},
+      E("div",{style:{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:10}},"HOW TO USE"),
+      [
+        ["1","Select NAICS","Choose the NAICS code matching the type of contract you want"],
+        ["2","Run Scout","Scout searches SAM.gov API for active contracts"],
+        ["3","Copy URL","Click Copy URL on any contract that interests you"],
+        ["4","Pipeline","Go to Agents Pipeline tab, paste the URL, and run the full proposal pipeline"],
+      ].map(function(item){return E("div",{key:item[0],style:{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start"}},
+        E("div",{style:{width:24,height:24,borderRadius:"50%",background:"linear-gradient(135deg,#00c887,#0088cc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#001a10",flexShrink:0}},item[0]),
+        E("div",null,
+          E("div",{style:{color:"#ddeeff",fontSize:12,fontWeight:700}},item[1]),
+          E("div",{style:{color:"#4a6a8a",fontSize:11,lineHeight:1.5}},item[2])
+        )
+      );})
+    )
+  );
+}
+
+
+function AgentsPanel() {
+  var s1=React.useState(""),url=s1[0],setUrl=s1[1];
+  var s2=React.useState(""),noticeId=s2[0],setNoticeId=s2[1];
+  var s3=React.useState(""),title=s3[0],setTitle=s3[1];
+  var s4=React.useState(""),agency=s4[0],setAgency=s4[1];
+  var s5=React.useState("idle"),phase=s5[0],setPhase=s5[1];
+  var s6=React.useState(""),msg=s6[0],setMsg=s6[1];
+  var s7=React.useState(""),proposal=s7[0],setProposal=s7[1];
+  var s8=React.useState(null),score=s8[0],setScore=s8[1];
+  var s9=React.useState([]),aiChecks=s9[0],setAiChecks=s9[1];
+  var s10=React.useState([]),humanChecks=s10[0],setHumanChecks=s10[1];
+  var s11=React.useState(false),showQ=s11[0],setShowQ=s11[1];
+  var s12=React.useState([]),files=s12[0],setFiles=s12[1];
+  var s13=React.useState(false),dragging=s13[0],setDragging=s13[1];
+  var fileRef=React.useRef();
+  var scColor=score>=80?"#00c887":score>=60?"#f0c040":"#ff4d6d";
+  var hDone=humanChecks.length>0&&humanChecks.every(function(c){return c.checked;});
+  var E=React.createElement;
+  var canRun=url.trim().length>0||noticeId.trim().length>0||title.trim().length>0;
+
+  function handleDrop(e){e.preventDefault();setDragging(false);setFiles(function(prev){return prev.concat(Array.from(e.dataTransfer.files));});}
+  function handleFileInput(e){setFiles(function(prev){return prev.concat(Array.from(e.target.files));});}
+  function removeFile(i){setFiles(function(prev){return prev.filter(function(_,idx){return idx!==i;});});}
+
+  function readFilesAsText(flist){
+    return Promise.all(Array.from(flist).map(function(file){
+      return new Promise(function(resolve){
+        var reader=new FileReader();
+        reader.onload=function(e){resolve({name:file.name,content:e.target.result.slice(0,3000),size:file.size});};
+        reader.onerror=function(){resolve({name:file.name,content:"[Could not read]",size:file.size});};
+        reader.readAsText(file);
+      });
+    }));
+  }
+
+  function runPipeline(){
+    setProposal("");setScore(null);setAiChecks([]);setHumanChecks([]);setShowQ(false);
+
+    // Step 1: Reader Agent - read URL
+    setPhase("reading");setMsg("Reader Agent opening contract page...");
+    var pageCtx="";
+    var fetchPromise=url.trim().length>0
+      ? fetch("https://upversion-contracts.vercel.app/api/proposal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:"Read page",fetchUrl:url.trim()})})
+          .then(function(r){return r.json();})
+          .then(function(d){if(d.pageRead)pageCtx=d.pagePreview||"";setMsg("Reader Agent extracted contract details!");})
+          .catch(function(){setMsg("Reader Agent could not read page, proceeding...");})
+      : Promise.resolve();
+
+    fetchPromise.then(function(){
+      // Step 1b: Read attachments if any
+      var attPromise=files.length>0
+        ? readFilesAsText(files).then(function(fc){
+            setMsg("Reader Agent processing "+files.length+" attachment(s)...");
+            return fc.map(function(f){return "\n--- "+f.name+" ---\n"+f.content;}).join("\n");
+          })
+        : Promise.resolve("");
+
+      attPromise.then(function(attCtx){
+        // Step 2: Writer Agent
+        setPhase("writing");
+        var msgs=["Writer Agent drafting Executive Summary...","Writer Agent writing Technical Approach...","Writer Agent documenting Past Performance...","Writer Agent making the winning argument..."];
+        var mi=0;setMsg(msgs[0]);
+        var interval=setInterval(function(){mi=(mi+1)%msgs.length;setMsg(msgs[mi]);},2000);
+
+        var detectedId=url.match(/opp\/([a-zA-Z0-9]+)\//);
+        var resolvedId=noticeId.trim()||(detectedId?detectedId[1]:"");
+
+        var p="You are UpAI, professional government contract proposal writer for UPVERSION LLC. UEI: Q1KPWH41NC57 CAGE: 16LF8. Owner: Mahezabin Tai President. Address: 253 Deep Brook Ct Piscataway NJ. Certifications: MBE SBE Asian-Pacific. NAICS: 541613 541611 611420 611430 541714 541715 611519. OPPORTUNITY: Notice ID: "+resolvedId+". Title: "+title+". Agency: "+agency+".";
+        if(pageCtx) p+=" CONTRACT PAGE DETAILS: "+pageCtx;
+        if(attCtx) p+=" ATTACHMENTS: "+attCtx;
+        p+=" Write a complete 7-section government proposal: 1. EXECUTIVE SUMMARY 2. COMPANY OVERVIEW AND CERTIFICATIONS 3. TECHNICAL APPROACH 4. PAST PERFORMANCE 5. KEY PERSONNEL 6. WHY UPVERSION LLC WINS 7. CALL TO ACTION. Formal government tone. Reference all contract details found.";
+
+        fetch("https://upversion-contracts.vercel.app/api/proposal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:p,maxTokens:6000})})
+          .then(function(r){return r.json();})
+          .then(function(d){
+            clearInterval(interval);
+            var full=(d.content&&d.content.map(function(x){return x.text||"";}).join(""))||"Error generating proposal.";
+            setProposal(full);
+            try{localStorage.setItem("upai_last_proposal",JSON.stringify({proposal:full,noticeId:resolvedId,title:title,agency:agency,naics:"611519",savedAt:new Date().toISOString(),cat:"Agent Pipeline"}));}catch(e){}
+
+            // Step 3: Reviewer Agent
+            setPhase("reviewing");setMsg("Reviewer Agent scoring your proposal...");
+            var qp="Review this government proposal. Return ONLY a valid JSON object with no extra text. Format: score is a number 0-100, checks is array of 8 objects each with label string, status string (pass or warn or fail), and note string. Labels are: Executive Summary, Certifications, Technical Approach, Past Performance, Key Personnel, Differentiators, Call to Action, Compliance Tone. PROPOSAL: "+full.slice(0,2000);
+            fetch("https://upversion-contracts.vercel.app/api/proposal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:qp,maxTokens:1000})})
+              .then(function(r){return r.json();})
+              .then(function(qd){
+                var qt=(qd.content&&qd.content.map(function(x){return x.text||"";}).join(""))||"{}";
+                var clean=qt.replace(/[`]{3}json|[`]{3}/g,"").trim();
+                try{var parsed=JSON.parse(clean);setScore(parsed.score||75);setAiChecks(parsed.checks||[]);}catch(e){setScore(75);setAiChecks([]);}
+                setHumanChecks([
+                  {label:"Past performance is accurate",checked:false},
+                  {label:"All requirements addressed",checked:false},
+                  {label:"Pricing is realistic",checked:false},
+                  {label:"Someone else reviewed",checked:false},
+                  {label:"Ready to submit",checked:false}
+                ]);
+                setShowQ(true);setMsg("All agents done! Mahezabin — please review and approve below.");setPhase("done");
+              })
+              .catch(function(){setScore(75);setAiChecks([]);setMsg("Done! Review below.");setPhase("done");});
+          })
+          .catch(function(e){clearInterval(interval);setMsg("Error: "+e.message);setPhase("idle");});
+      });
+    });
+  }
+
+  function toggleH(i){setHumanChecks(function(prev){return prev.map(function(c,idx){return idx===i?{label:c.label,checked:!c.checked}:c;});});}
+
+  var inp={width:"100%",background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:8,color:"#ddeeff",fontSize:12,outline:"none",marginBottom:8};
+
+  return E("div",{style:{background:"#111f2e",border:"1px solid #1a3a5a",borderRadius:8,padding:20}},
+    E("div",{style:{color:"#ddeeff",fontSize:18,fontWeight:700,marginBottom:4}},"UpAI Agent Pipeline"),
+    E("div",{style:{color:"#4a6a8a",fontSize:12,marginBottom:20}},"Paste SAM.gov URL + upload attachments — agents read, draft, and review. Mahezabin only approves!"),
+
+    // Pipeline steps
+    E("div",{style:{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}},
+      ["Reader","Writer","Reviewer","You Approve"].map(function(step,i){
+        var phases={"Reader":"reading","Writer":"writing","Reviewer":"reviewing","You Approve":"done"};
+        var isActive=phase===phases[step];
+        var isDone=(phase==="done")||(phase==="reviewing"&&i<2)||(phase==="writing"&&i<1);
+        return E("div",{key:step,style:{display:"flex",alignItems:"center",gap:6}},
+          E("div",{style:{background:isActive?"linear-gradient(135deg,#00c887,#0088cc)":isDone?"#0a2a18":"#0a1628",border:"1px solid "+(isActive?"#00c887":isDone?"#00c88740":"#1a3a5a"),borderRadius:8,padding:"6px 12px"}},
+            E("span",{style:{color:isActive?"#001a10":isDone?"#00c887":"#4a6a8a",fontSize:12,fontWeight:700}},step)
+          ),
+          i<3&&E("span",{style:{color:"#1a3a5a",fontSize:16}},"->")
+        );
+      })
+    ),
+
+    // Input section - only show when idle
+    phase==="idle"&&E("div",null,
+      E("div",{style:{background:"#0a1628",border:"1px solid #1a3a5a",borderRadius:8,padding:14,marginBottom:10}},
+        E("div",{style:{color:"#00c887",fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:2}},"STEP 1 — CONTRACT INFO"),
+        E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"SAM.GOV CONTRACT URL (recommended)"),
+        E("input",{value:url,onChange:function(e){setUrl(e.target.value);},placeholder:"https://sam.gov/opp/.../view",style:inp}),
+        E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"NOTICE ID (optional if URL provided)"),
+        E("input",{value:noticeId,onChange:function(e){setNoticeId(e.target.value);},placeholder:"e.g. W9124X26QA014",style:inp}),
+        E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"CONTRACT TITLE (optional)"),
+        E("input",{value:title,onChange:function(e){setTitle(e.target.value);},placeholder:"Paste title from SAM.gov",style:inp}),
+        E("label",{style:{color:"#8aaabb",fontSize:11,display:"block",marginBottom:4}},"AGENCY (optional)"),
+        E("input",{value:agency,onChange:function(e){setAgency(e.target.value);},placeholder:"e.g. Dept of Army, NIH, VA",style:{...inp,marginBottom:0}})
+      ),
+
+      // Attachments upload
+      E("div",{style:{background:"#0a1628",border:"1px solid #1a3a5a",borderRadius:8,padding:14,marginBottom:10}},
+        E("div",{style:{color:"#00c887",fontSize:11,fontWeight:700,marginBottom:8,letterSpacing:2}},"STEP 2 — UPLOAD ATTACHMENTS (optional but recommended)"),
+        E("div",{style:{color:"#4a6a8a",fontSize:11,marginBottom:10}},"Download SOW, PWS, or any attachments from SAM.gov and upload here. Reader Agent will analyze them."),
+        E("div",{
+          onDragOver:function(e){e.preventDefault();setDragging(true);},
+          onDragLeave:function(){setDragging(false);},
+          onDrop:handleDrop,
+          onClick:function(){fileRef.current.click();},
+          style:{border:"2px dashed "+(dragging?"#00c887":"#1a3a5a"),borderRadius:8,padding:16,textAlign:"center",cursor:"pointer",background:dragging?"#0a2a18":"#060f1c",marginBottom:8}
+        },
+          E("div",{style:{color:"#4a6a8a",fontSize:13}},dragging?"Drop files here!":"Drag & drop or click to upload attachments"),
+          E("div",{style:{color:"#2a4a68",fontSize:11,marginTop:4}},"PDF, DOCX, TXT supported"),
+          E("input",{ref:fileRef,type:"file",multiple:true,accept:".pdf,.docx,.txt,.doc",onChange:handleFileInput,style:{display:"none"}})
+        ),
+        files.length>0&&E("div",null,
+          files.map(function(f,i){
+            return E("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0a2a18",border:"1px solid #00c88730",borderRadius:6,padding:"6px 12px",marginBottom:4}},
+              E("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                E("span",{style:{color:"#00c887"}},"Doc"),
+                E("div",null,
+                  E("div",{style:{color:"#00e5a0",fontSize:12,fontWeight:600}},f.name),
+                  E("div",{style:{color:"#2a6a44",fontSize:10}},(f.size/1024).toFixed(1)+" KB")
+                )
+              ),
+              E("button",{onClick:function(){removeFile(i);},style:{background:"none",border:"none",color:"#ff4d6d",cursor:"pointer",fontSize:16}},"X")
+            );
+          })
+        )
+      ),
+
+      E("button",{onClick:runPipeline,disabled:!canRun,style:{width:"100%",background:canRun?"linear-gradient(135deg,#00c887,#0088cc)":"#0a2030",color:canRun?"#001a10":"#2a5a78",border:"none",borderRadius:8,padding:12,fontWeight:800,fontSize:14,cursor:canRun?"pointer":"not-allowed"}},
+        files.length>0?"Run Pipeline (URL + "+files.length+" Attachment"+(files.length>1?"s)":")"):"Run Full Agent Pipeline (Reader -> Writer -> Reviewer)")
+    ),
+
+    // Status message during processing
+    phase!=="idle"&&phase!=="done"&&E("div",{style:{background:"#060f1c",border:"1px solid #00c88740",borderRadius:8,padding:12,marginBottom:14,display:"flex",alignItems:"center",gap:10}},
+      E("div",{style:{width:8,height:8,borderRadius:"50%",background:"#00c887",flexShrink:0}}),
+      E("span",{style:{color:"#00c887",fontSize:13,fontWeight:600}},msg)
+    ),
+
+    // Done message
+    phase==="done"&&E("div",{style:{background:"#0a2a18",border:"1px solid #00c88740",borderRadius:8,padding:10,marginBottom:14,color:"#00e5a0",fontSize:13,fontWeight:600}},msg),
+
+    // Proposal output
+    proposal&&E("div",null,
+      score!==null&&E("div",{style:{background:"#0a1628",border:"1px solid #1a3a5a",borderRadius:8,padding:12,marginBottom:10}},
+        E("div",{onClick:function(){setShowQ(!showQ);},style:{display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginBottom:showQ?10:0}},
+          E("div",{style:{display:"flex",alignItems:"center",gap:10}},
+            E("span",{style:{color:"#f0c040",fontSize:11,fontWeight:700,letterSpacing:2}},"QUALITY REPORT"),
+            E("span",{style:{color:scColor,fontSize:18,fontWeight:900}},score+"%"),
+            E("span",{style:{background:scColor,color:"#001a10",fontSize:10,padding:"1px 8px",borderRadius:20,fontWeight:700}},score>=80?"Strong":score>=60?"Good":"Needs Work")
+          ),
+          E("span",{style:{color:"#4a6a8a",fontSize:12}},showQ?"Hide":"Show")
+        ),
+        showQ&&E("div",null,
+          E("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:10}},
+            aiChecks.map(function(c,i){return E("div",{key:i,style:{display:"flex",gap:6,background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:6,padding:"4px 8px"}},
+              E("span",{style:{color:c.status==="pass"?"#00c887":c.status==="warn"?"#f0c040":"#ff4d6d",fontSize:11,minWidth:20}},c.status==="pass"?"OK":c.status==="warn"?"!!":"X"),
+              E("div",null,
+                E("div",{style:{color:"#ddeeff",fontSize:10,fontWeight:600}},c.label),
+                E("div",{style:{color:"#4a6a8a",fontSize:9}},c.note)
+              )
+            );})
+          ),
+          E("div",{style:{color:"#8aaabb",fontSize:11,fontWeight:700,marginBottom:8}},"MAHEZABIN REVIEW CHECKLIST"),
+          humanChecks.map(function(c,i){return E("div",{key:i,onClick:function(){toggleH(i);},style:{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",cursor:"pointer",background:c.checked?"#0a2a18":"transparent",border:"1px solid "+(c.checked?"#00c88740":"#1a3a5a"),borderRadius:6,marginBottom:4}},
+            E("div",{style:{width:16,height:16,border:"2px solid "+(c.checked?"#00c887":"#3a6a8a"),background:c.checked?"#00c887":"transparent",borderRadius:3,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+              c.checked&&E("span",{style:{color:"#001a10",fontSize:10,fontWeight:900}},"v")
+            ),
+            E("span",{style:{color:c.checked?"#00e5a0":"#8aaabb",fontSize:12}},c.label)
+          );}),
+          hDone&&E("div",{style:{marginTop:8,background:"#0a2a18",border:"1px solid #00c88750",borderRadius:8,padding:10,textAlign:"center",color:"#00e5a0",fontSize:14,fontWeight:700}},"Mahezabin Approved! Ready to Submit!")
+        )
+      ),
+
+      E("div",{style:{background:"#060f1c",border:"1px solid #1a3a5a",borderRadius:8,padding:14,maxHeight:400,overflowY:"auto",marginBottom:10}},
+        E("div",{style:{color:"#8aaabb",fontSize:10,fontWeight:700,letterSpacing:2,marginBottom:8}},"GENERATED PROPOSAL"),
+        E("pre",{style:{color:"#b8d4ec",fontSize:12,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word"}},proposal)
+      ),
+
+      E("div",{style:{display:"flex",gap:8,flexWrap:"wrap"}},
+        E("button",{onClick:function(){navigator.clipboard.writeText(proposal);},style:{background:"#0a2030",color:"#4fc3f7",border:"1px solid #1a4060",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}},"Copy"),
+        E("button",{onClick:function(){downloadAsWord(proposal,noticeId,title,agency,{label:"Agent Pipeline"},{naics:"611519"});},style:{background:"linear-gradient(135deg,#00c887,#009966)",color:"#001a10",border:"none",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}},"Download Word"),
+        E("button",{onClick:function(){setPhase("idle");setProposal("");setScore(null);setAiChecks([]);setHumanChecks([]);setMsg("");setShowQ(false);setFiles([]);},style:{background:"#0a2030",color:"#6a8aa8",border:"1px solid #1a3a5a",borderRadius:6,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}},"New Contract"),
+        E("button",{style:{marginLeft:"auto",background:hDone?"#00c887":"linear-gradient(135deg,#1a6fb5,#0088cc)",color:hDone?"#001a10":"#fff",border:"none",borderRadius:6,padding:"7px 20px",fontWeight:800,fontSize:13,cursor:"pointer"}},hDone?"Submit Ready!":"Pending Review")
+      )
+    )
+  );
+}
+
+
 function App() {
   const [draftInfo, setDraftInfo] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("all");
@@ -510,7 +847,7 @@ function App() {
     setDraftInfo({ row: foundRow, cat: foundCat, savedData: data });
   }
 
-  const filtered = activeTab==="all" ? CATEGORIES : CATEGORIES.filter(c=>c.id===activeTab);
+  const filtered = activeTab==="all" ? CATEGORIES : CATEGORIES.filter(c=>c.id===activeTab && c.id!=="agents" && c.id!=="pipeline");
 
   return (
     <div style={{minHeight:"100vh",background:"#0d1b2a"}}>
@@ -552,7 +889,7 @@ function App() {
           ))}
         </div>
 
-        {filtered.map(cat=><CategoryCard key={cat.id} cat={cat} onDraft={(row,c)=>setDraftInfo({row,cat:c})}/>)}
+        {activeTab==="agents" ? React.createElement(AgentsView,null) : activeTab==="pipeline" ? React.createElement(AgentsPanel,null) : filtered.map(cat=><CategoryCard key={cat.id} cat={cat} onDraft={(row,c)=>setDraftInfo({row,cat:c})}/>)}
 
         <div style={{background:"#111f2e",border:"1px solid #1a3a5a",borderRadius:8,padding:"14px 20px",marginTop:8}}>
           <div style={{color:"#8aaabb",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:10}}>HOW UpAI WORKS</div>
